@@ -1,0 +1,5 @@
+*.mat
+checkpoints/
+dumps/
+*.log
+.DS_Store
