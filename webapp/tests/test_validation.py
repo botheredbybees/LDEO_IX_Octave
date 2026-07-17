@@ -57,3 +57,14 @@ def test_existing_referenced_file_produces_no_warning(tmp_path, monkeypatch):
     result = validation.validate_session(session)
 
     assert cast.id not in result.warnings
+
+
+def test_traversal_attempt_produces_generic_warning_not_a_bypass(tmp_path, monkeypatch):
+    monkeypatch.setitem(config.MOUNTS, "ladcp", tmp_path)
+    cast = _valid_cast(ladcpdo="../../../../etc/passwd")
+    session = CruiseSession(casts=[cast])
+
+    result = validation.validate_session(session)
+
+    assert result.is_valid is True
+    assert "../../../../etc/passwd not found under ladcp mount" in result.warnings[cast.id]

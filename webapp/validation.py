@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from webapp import config
+from webapp import config, paths
 from webapp.models import CruiseSession
 
 REQUIRED_FIELDS = [
@@ -45,7 +45,15 @@ def validate_session(session: CruiseSession) -> ValidationResult:
             if not relative:
                 continue
             mount_root = config.MOUNTS.get(mount_name)
-            if mount_root is None or not (mount_root / relative).is_file():
+            if mount_root is None:
+                cast_warnings.append(f"{relative} not found under {mount_name} mount")
+                continue
+            try:
+                resolved = paths.resolve_within(mount_root, relative)
+            except paths.PathOutsideMountError:
+                cast_warnings.append(f"{relative} not found under {mount_name} mount")
+                continue
+            if not resolved.is_file():
                 cast_warnings.append(f"{relative} not found under {mount_name} mount")
         if cast_warnings:
             result.warnings[cast.id] = cast_warnings
