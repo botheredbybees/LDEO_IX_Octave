@@ -53,3 +53,16 @@ def test_preview_endpoint_returns_sniffed_structure(tmp_path, monkeypatch):
     body = response.json()
     assert body["header_lines"] == 0
     assert body["fields_per_line"] == 3
+
+
+def test_ladcp_scan_endpoint(tmp_path, monkeypatch):
+    (tmp_path / "003DL000.000").write_text("")
+    (tmp_path / "003UL000.000").write_text("")
+    monkeypatch.setitem(config.MOUNTS, "ladcp", tmp_path)
+
+    client = TestClient(main.app)
+    response = client.get("/api/ladcp/scan")
+
+    assert response.status_code == 200
+    casts = response.json()["casts"]
+    assert casts == [{"station": "003", "down": "003DL000.000", "up": "003UL000.000"}]

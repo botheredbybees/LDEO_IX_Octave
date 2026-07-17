@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 
-from webapp import config, delimited_parser, file_browser, paths
+from webapp import config, delimited_parser, file_browser, ladcp_scan, paths
 
 app = FastAPI(title="LDEO_IX Cruise/Cast Intake")
 
@@ -55,4 +55,18 @@ def preview_file(mount: str, path: str):
         "header_lines": preview.header_lines,
         "fields_per_line": preview.fields_per_line,
         "preview_rows": preview.preview_rows,
+    }
+
+
+@app.get("/api/ladcp/scan")
+def scan_ladcp():
+    mount_root = config.MOUNTS.get("ladcp")
+    if mount_root is None or not mount_root.is_dir():
+        raise HTTPException(status_code=404, detail="ladcp mount not available")
+
+    results = ladcp_scan.scan_ladcp_directory(mount_root)
+    return {
+        "casts": [
+            {"station": r.station, "down": r.down, "up": r.up} for r in results
+        ]
     }
