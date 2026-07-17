@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<section id="cruise-header">
+  <label>Cruise ID: <input id="cruise-id" type="text"></label>
+</section>
+
+<section id="cast-list">
+  <h2>Casts</h2>
+  <table id="cast-table">
+    <thead>
+      <tr><th>Name</th><th>Station</th><th>Lat</th><th>Lon</th><th></th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <button id="add-cast">Add cast</button>
+</section>
+
+<section id="cast-editor" hidden>
+  <h2>Edit cast</h2>
+  <form id="cast-form">
+    <fieldset>
+      <legend>Raw LADCP files</legend>
+      <select id="ladcp-suggestions"></select>
+      <button type="button" id="apply-ladcp-suggestion">Use selected pair</button>
+      <label>Name <input name="cast_name"></label>
+      <label>Station <input name="ladcp_station" type="number"></label>
+      <label>Cast <input name="ladcp_cast" type="number"></label>
+      <label>Down file <input name="ladcpdo"></label>
+      <label>Up file <input name="ladcpup"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>CTD</legend>
+      <label>File <input name="ctd" id="ctd-path"></label>
+      <button type="button" id="preview-ctd">Preview / map columns</button>
+      <div id="ctd-preview"></div>
+      <label>Header lines <input name="ctd_header_lines" type="number"></label>
+      <label>Fields per line <input name="ctd_fields_per_line" type="number"></label>
+      <label>Time field <input name="ctd_time_field" type="number"></label>
+      <label>Pressure field <input name="ctd_pressure_field" type="number"></label>
+      <label>Temperature field <input name="ctd_temperature_field" type="number"></label>
+      <label>Salinity field <input name="ctd_salinity_field" type="number"></label>
+      <label>Bad value <input name="ctd_badvals" type="number"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Nav</legend>
+      <label>File <input name="nav" id="nav-path"></label>
+      <button type="button" id="preview-nav">Preview / map columns</button>
+      <div id="nav-preview"></div>
+      <label>Header lines <input name="nav_header_lines" type="number"></label>
+      <label>Fields per line <input name="nav_fields_per_line" type="number"></label>
+      <label>Time field <input name="nav_time_field" type="number"></label>
+      <label>Lat field <input name="nav_lat_field" type="number"></label>
+      <label>Lon field <input name="nav_lon_field" type="number"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Position / time / bottom-tracking</legend>
+      <label>Lat <input name="lat" type="number" step="any"></label>
+      <label>Lon <input name="lon" type="number" step="any"></label>
+      <label>Magnetic deviation (drot) <input name="drot" type="number" step="any"></label>
+      <label>Time start (Y M D h m s) <input name="time_start_raw" placeholder="2015 4 11 17 36 23.0"></label>
+      <label>Time end (Y M D h m s) <input name="time_end_raw" placeholder="2015 4 11 21 9 42.0"></label>
+      <label>Bottom-track mode <input name="btrk_mode" type="number"></label>
+      <label>Bottom-track used <input name="btrk_used" type="number"></label>
+    </fieldset>
+
+    <button type="submit">Save cast</button>
+  </form>
+</section>
+
+<section id="generate-section">
+  <button id="generate">Generate set_cast_params.m</button>
+  <pre id="generate-result"></pre>
+</section>
+{% endblock %}
+{% block scripts %}<script src="/static/app.js"></script>{% endblock %}

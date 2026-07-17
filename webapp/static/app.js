@@ -1,0 +1,180 @@
+const state = { editingCastId: null };
+
+async function api(path, options) {
+  const response = await fetch(path, options);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw { status: response.status, body };
+  }
+  return response.status === 204 ? null : response.json();
+}
+
+async function refreshCastTable() {
+  const session = await api("/api/session");
+  document.getElementById("cruise-id").value = session.cruise_id || "";
+  const tbody = document.querySelector("#cast-table tbody");
+  tbody.innerHTML = "";
+  for (const cast of session.casts) {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${cast.cast_name || ""}</td>
+      <td>${cast.ladcp_station ?? ""}</td>
+      <td>${cast.lat ?? ""}</td>
+      <td>${cast.lon ?? ""}</td>
+      <td>
+        <button data-edit="${cast.id}">Edit</button>
+        <button data-clone="${cast.id}">Clone</button>
+        <button data-remove="${cast.id}">Remove</button>
+      </td>`;
+    tbody.appendChild(row);
+  }
+}
+
+async function openEditor(castId) {
+  const session = await api("/api/session");
+  const cast = session.casts.find((c) => c.id === castId) || {};
+  state.editingCastId = castId || null;
+  const form = document.getElementById("cast-form");
+  form.reset();
+  for (const [key, value] of Object.entries(cast)) {
+    const field = form.elements.namedItem(key);
+    if (field) field.value = value ?? "";
+  }
+  if (cast.time_start) form.elements.namedItem("time_start_raw").value = cast.time_start.join(" ");
+  if (cast.time_end) form.elements.namedItem("time_end_raw").value = cast.time_end.join(" ");
+  document.getElementById("cast-editor").hidden = false;
+  await loadLadcpSuggestions();
+}
+
+async function loadLadcpSuggestions() {
+  let data;
+  try {
+    data = await api("/api/ladcp/scan");
+  } catch (e) {
+    return;
+  }
+  const select = document.getElementById("ladcp-suggestions");
+  select.innerHTML = "";
+  for (const cast of data.casts) {
+    const option = document.createElement("option");
+    option.value = JSON.stringify(cast);
+    option.textContent = `station ${cast.station}: ${cast.down || "?"} / ${cast.up || "?"}`;
+    select.appendChild(option);
+  }
+}
+
+document.getElementById("apply-ladcp-suggestion").addEventListener("click", () => {
+  const select = document.getElementById("ladcp-suggestions");
+  if (!select.value) return;
+  const chosen = JSON.parse(select.value);
+  const form = document.getElementById("cast-form");
+  form.elements.namedItem("ladcp_station").value = parseInt(chosen.station, 10);
+  form.elements.namedItem("ladcpdo").value = chosen.down || "";
+  form.elements.namedItem("ladcpup").value = chosen.up || "";
+  form.elements.namedItem("cast_name").value = chosen.station;
+});
+
+async function renderPreview(mount, pathInputId, targetDivId, roleFields) {
+  const path = document.getElementById(pathInputId).value;
+  if (!path) return;
+  const preview = await api(`/api/preview/${mount}?path=${encodeURIComponent(path)}`);
+  const div = document.getElementById(targetDivId);
+  const form = document.getElementById("cast-form");
+  form.elements.namedItem(`${mount === "ctd" ? "ctd" : "nav"}_header_lines`).value = preview.header_lines;
+  form.elements.namedItem(`${mount === "ctd" ? "ctd" : "nav"}_fields_per_line`).value = preview.fields_per_line;
+
+  let html = "<table><tr>";
+  for (let col = 0; col < preview.fields_per_line; col++) {
+    html += `<th><select data-col="${col}"><option value="">-</option>`;
+    for (const role of roleFields) {
+      html += `<option value="${role}">${role}</option>`;
+    }
+    html += "</select></th>";
+  }
+  html += "</tr>";
+  for (const row of preview.preview_rows) {
+    html += "<tr>" + row.map((v) => `<td>${v}</td>`).join("") + "</tr>";
+  }
+  html += "</table>";
+  div.innerHTML = html;
+
+  div.querySelectorAll("select[data-col]").forEach((select) => {
+    select.addEventListener("change", () => {
+      const col = parseInt(select.dataset.col, 10) + 1;
+      const role = select.value;
+      if (!role) return;
+      const fieldName = `${mount === "ctd" ? "ctd" : "nav"}_${role}_field`;
+      const field = form.elements.namedItem(fieldName);
+      if (field) field.value = col;
+    });
+  });
+}
+
+document.getElementById("preview-ctd").addEventListener("click", () => {
+  renderPreview("ctd", "ctd-path", "ctd-preview", ["time", "pressure", "temperature", "salinity"]);
+});
+document.getElementById("preview-nav").addEventListener("click", () => {
+  renderPreview("nav", "nav-path", "nav-preview", ["time", "lat", "lon"]);
+});
+
+document.getElementById("add-cast").addEventListener("click", async () => {
+  const created = await api("/api/session/casts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  await refreshCastTable();
+  await openEditor(created.id);
+});
+
+document.querySelector("#cast-table tbody").parentElement.addEventListener("click", async (event) => {
+  const editId = event.target.dataset.edit;
+  const cloneId = event.target.dataset.clone;
+  const removeId = event.target.dataset.remove;
+  if (editId) await openEditor(editId);
+  if (cloneId) {
+    await api(`/api/session/casts/${cloneId}/clone`, { method: "POST" });
+    await refreshCastTable();
+  }
+  if (removeId) {
+    await api(`/api/session/casts/${removeId}`, { method: "DELETE" });
+    await refreshCastTable();
+  }
+});
+
+document.getElementById("cast-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.target;
+  const payload = {};
+  for (const element of form.elements) {
+    if (!element.name || element.name.endsWith("_raw")) continue;
+    if (element.value === "") continue;
+    payload[element.name] = element.type === "number" ? Number(element.value) : element.value;
+  }
+  const startRaw = form.elements.namedItem("time_start_raw").value;
+  const endRaw = form.elements.namedItem("time_end_raw").value;
+  if (startRaw) payload.time_start = startRaw.trim().split(/\s+/).map(Number);
+  if (endRaw) payload.time_end = endRaw.trim().split(/\s+/).map(Number);
+
+  await api(`/api/session/casts/${state.editingCastId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  document.getElementById("cast-editor").hidden = true;
+  await refreshCastTable();
+});
+
+document.getElementById("generate").addEventListener("click", async () => {
+  const result = document.getElementById("generate-result");
+  try {
+    const body = await api("/api/generate", { method: "POST" });
+    result.textContent = `Written to ${body.written_to}`;
+    result.className = "";
+  } catch (e) {
+    result.textContent = JSON.stringify(e.body, null, 2);
+    result.className = "error";
+  }
+});
+
+refreshCastTable();

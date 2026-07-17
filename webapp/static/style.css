@@ -1,0 +1,8 @@
+body { font-family: sans-serif; margin: 1.5rem; }
+fieldset { margin-bottom: 1rem; }
+label { display: block; margin: 0.25rem 0; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ccc; padding: 0.25rem 0.5rem; text-align: left; }
+#ctd-preview table, #nav-preview table { font-size: 0.85rem; }
+.error { color: #b00020; }
+.warning { color: #8a6d00; }
