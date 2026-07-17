@@ -60,6 +60,7 @@ acknowledged. Implications for future work:
 | `ldeo_ix/` | LDEO_IX source, patched to run under Octave. Every patch is listed in `CHANGES.md` — don't make undocumented changes here. |
 | `stubs/` | No-op replacements for plotting functions (`figure`, `plot`, `subplot`, ...) plus two genuinely missing/incompatible functions (`makebars`, `interp1q`). Needed because the Docker image is headless. `set.m` is the one stub with real logic (no-ops only on graphics-handle calls, falls through otherwise) — don't blanket-stub `set`/`get` further; that was a deliberate constraint carried over from the original harness work. |
 | `examples/set_cast_params_P16N_example.m` | A worked example of the one file every LDEO_IX cruise/cast must supply. Cast-specific (hardcoded paths, lat/lon, timestamps for one real GO-SHIP cast) — a reference, not a default config. Don't "fix" it to be generic; if you want a generic template, add a second file rather than genericizing this one (it's deliberately a real worked example). |
+| `webapp/` | Web intake form (FastAPI + Jinja2 + vanilla JS) that generates `set_cast_params.m`. No Node/build toolchain. Tests live in `webapp/tests/`, run via `python -m pytest webapp/tests`. |
 | `Dockerfile` | Builds `FROM docker.io/gnuoctave/octave:9.2.0`, copies `ldeo_ix/` and `stubs/` in, sets `OCTAVE_PATH` so stubs shadow real plotting builtins. |
 | `CHANGES.md` | The complete, authoritative patch list against upstream LDEO_IX. Update this any time `ldeo_ix/` changes — it's the thing that makes "patched, not silently forked" true. |
 | `NOTICE.md` | Provenance and license status. |
@@ -89,3 +90,9 @@ acknowledged. Implications for future work:
   `process_cast` step(s) against a real or example cast directory.
 - Keep `examples/` and `README.md` in sync if you change how the image is
   invoked (entrypoint, `OCTAVE_PATH`, mount point).
+- `webapp/` changes should keep the pure-logic modules (`paths.py`,
+  `delimited_parser.py`, `ladcp_scan.py`, `netcdf_reader.py`,
+  `template_gen.py`, `validation.py`) unit-tested; UI/route wiring is
+  verified manually (`python -m uvicorn webapp.main:app` + browser, or a
+  full `docker build`/`docker run`) per the pattern in
+  `docs/superpowers/specs/2026-07-15-cruise-cast-intake-form-design.md`.

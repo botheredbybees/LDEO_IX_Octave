@@ -25,6 +25,9 @@ See `NOTICE.md` for provenance and license status of the upstream code —
 - `examples/set_cast_params_P16N_example.m` — a worked example of the one
   file every cruise/cast must supply (see below). Cast-specific — copy and
   edit it, don't run it as-is.
+- `webapp/` — the web intake form (FastAPI + vanilla JS) that generates
+  `set_cast_params.m`; see `docs/superpowers/specs/2026-07-15-cruise-cast-intake-form-design.md`
+  for its design.
 - `Dockerfile` — builds the image from `docker.io/gnuoctave/octave:9.2.0`.
 
 ## Build
@@ -35,37 +38,49 @@ docker build -t ldeo-ix-octave .
 
 ## Usage
 
-By default, `docker run ldeo-ix-octave` (with no arguments) starts a web server on port 8080 for building `set_cast_params.m`. To use the direct Octave CLI workflow below, append `octave-cli` to your docker run command.
+### Web intake form (default)
 
-LDEO_IX expects one `set_cast_params.m` per cast, plus the cast's raw data,
-in your current working directory. `process_cast.m` loads it automatically.
+`docker run ldeo-ix-octave` starts a web server on port 8080 for building
+`set_cast_params.m` through a form instead of hand-editing it. Mount your
+working directory at `/data`, plus whichever source-data directories you
+have, then open the form in a browser:
 
-1. Create a working directory with your raw LADCP/CTD/nav data and a
-   `set_cast_params.m` (start from `examples/set_cast_params_P16N_example.m`
-   — it documents every field). `readme` details for the *original* LDEO_IX
-   directory layout are in the upstream project; this image doesn't require
-   that full tree, only what your `set_cast_params.m` references.
+```bash
+docker run --rm -p 8080:8080 \
+  -v "$(pwd)/my_cruise:/data" \
+  -v "$(pwd)/my_cruise/raw:/ladcp_data" \
+  -v "$(pwd)/my_cruise/ctd:/ctd_data" \
+  -v "$(pwd)/my_cruise/nav:/navigation_data" \
+  ldeo-ix-octave
+```
 
-2. Run the container with that directory mounted at `/data`:
+Open `http://localhost:8080/` and add each cast — the form suggests raw
+LADCP file pairs, lets you preview and column-map CTD/nav files, and can
+clone a previous cast (in this session, or from a prior processed cast's
+output `.nc`) as a starting point. Generating writes `/data/set_cast_params.m`
+(backing up any existing file first).
 
-   ```bash
-   docker run --rm -it -v "$(pwd)/my_cast:/data" ldeo-ix-octave octave-cli
-   ```
+### Direct Octave CLI
 
-   This drops you into `octave-cli` with `ldeo_ix/` and `stubs/` already on
-   the path.
+The original CLI workflow (LDEO_IX expects one `set_cast_params.m` per cast,
+plus the cast's raw data, in your current working directory —
+`process_cast.m` loads it automatically) is still available:
 
-3. Process a cast:
+```bash
+docker run --rm -it -v "$(pwd)/my_cast:/data" ldeo-ix-octave octave-cli
+```
 
-   ```octave
-   process_cast(3)              % process station/cast 3
-   process_cast(3, 1, 2)        % run all 17 steps without stopping
-   ```
+This drops you into `octave-cli` with `ldeo_ix/` and `stubs/` already on
+the path. Process a cast:
 
-   See the docstring in `ldeo_ix/process_cast.m` for the full step list,
-   checkpoint/resume behavior, and `begin_step`/`stop` arguments.
+```octave
+process_cast(3)              % process station/cast 3
+process_cast(3, 1, 2)        % run all 17 steps without stopping
+```
 
-You can also run a script non-interactively:
+See the docstring in `ldeo_ix/process_cast.m` for the full step list,
+checkpoint/resume behavior, and `begin_step`/`stop` arguments. You can also
+run a script non-interactively:
 
 ```bash
 docker run --rm -v "$(pwd)/my_cast:/data" ldeo-ix-octave octave-cli --eval "process_cast(3,1,2)"
