@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -13,17 +14,20 @@ class CastPatch(BaseModel):
     model_config = {"extra": "allow"}
 
 
+class SessionPatch(BaseModel):
+    cruise_id: Optional[str] = None
+
+
 @router.get("/session")
 def get_session():
     return session_store.load_session()
 
 
 @router.put("/session")
-def update_session(patch: CastPatch):
+def update_session(patch: SessionPatch):
     session = session_store.load_session()
-    data = patch.model_dump(exclude_unset=True)
-    if "cruise_id" in data:
-        session.cruise_id = data["cruise_id"]
+    if patch.cruise_id is not None:
+        session.cruise_id = patch.cruise_id
     session_store.save_session(session)
     return session
 
