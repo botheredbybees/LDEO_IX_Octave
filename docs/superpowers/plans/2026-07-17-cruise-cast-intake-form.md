@@ -615,8 +615,8 @@ def preview_file(mount: str, path: str):
 
     try:
         resolved = paths.resolve_within(mount_root, path)
-    except paths.PathOutsideMountError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+    except paths.PathOutsideMountError:
+        raise HTTPException(status_code=400, detail="path is outside the allowed directory")
 
     if not resolved.is_file():
         raise HTTPException(status_code=404, detail=f"{path!r} is not a file")
@@ -1613,8 +1613,8 @@ def create_cast_from_netcdf(path: str):
     mount_root = config.MOUNTS.get("data")
     try:
         resolved = paths.resolve_within(mount_root, path)
-    except paths.PathOutsideMountError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+    except paths.PathOutsideMountError:
+        raise HTTPException(status_code=400, detail="path is outside the allowed directory")
 
     try:
         attrs = netcdf_reader.read_global_attributes(resolved)
