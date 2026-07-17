@@ -21,7 +21,9 @@ def test_reads_global_attributes_written_by_scipy(tmp_path):
 
     attrs = netcdf_reader.read_global_attributes(nc_path)
 
+    assert isinstance(attrs["lat"], float)
     assert attrs["lat"] == -15.498335
+    assert isinstance(attrs["lon"], float)
     assert attrs["lon"] == -150.19699
     assert attrs["drot"] == 12.318441
     assert attrs["name"] == "003"
