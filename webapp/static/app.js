@@ -207,6 +207,14 @@ document.getElementById("cast-form").addEventListener("submit", async (event) =>
   await refreshCastTable();
 });
 
+document.getElementById("cruise-id").addEventListener("change", async (event) => {
+  await api("/api/session", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cruise_id: event.target.value }),
+  });
+});
+
 document.getElementById("generate").addEventListener("click", async () => {
   const result = document.getElementById("generate-result");
   try {

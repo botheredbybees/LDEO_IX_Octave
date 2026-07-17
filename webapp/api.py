@@ -18,6 +18,16 @@ def get_session():
     return session_store.load_session()
 
 
+@router.put("/session")
+def update_session(patch: CastPatch):
+    session = session_store.load_session()
+    data = patch.model_dump(exclude_unset=True)
+    if "cruise_id" in data:
+        session.cruise_id = data["cruise_id"]
+    session_store.save_session(session)
+    return session
+
+
 @router.post("/session/casts", status_code=201)
 def create_cast(patch: CastPatch):
     session = session_store.load_session()

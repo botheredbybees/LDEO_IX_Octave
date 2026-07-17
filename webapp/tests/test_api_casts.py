@@ -14,6 +14,17 @@ def test_get_session_starts_empty(tmp_path, monkeypatch):
     assert response.json()["casts"] == []
 
 
+def test_update_session_sets_cruise_id(tmp_path, monkeypatch):
+    monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
+    client = TestClient(main.app)
+
+    response = client.put("/api/session", json={"cruise_id": "P16N"})
+
+    assert response.status_code == 200
+    assert response.json()["cruise_id"] == "P16N"
+    assert client.get("/api/session").json()["cruise_id"] == "P16N"
+
+
 def test_create_cast_persists_to_session(tmp_path, monkeypatch):
     monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
     client = TestClient(main.app)
