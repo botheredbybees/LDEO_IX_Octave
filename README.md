@@ -50,6 +50,7 @@ docker run --rm -p 8080:8080 \
   -v "$(pwd)/my_cruise:/data" \
   -v "$(pwd)/my_cruise/raw:/ladcp_data" \
   -v "$(pwd)/my_cruise/ctd:/ctd_data" \
+  -v "$(pwd)/my_cruise/sadcp:/sadcp_data" \
   -v "$(pwd)/my_cruise/nav:/navigation_data" \
   ldeo-ix-octave
 ```
