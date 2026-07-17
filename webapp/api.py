@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from webapp import config, netcdf_reader, paths, session_store
+from webapp import config, netcdf_reader, paths, session_store, template_gen, validation
 from webapp.models import CastEntry
 
 router = APIRouter()
@@ -92,3 +94,30 @@ def create_cast_from_netcdf(path: str):
     session.casts.append(cast)
     session_store.save_session(session)
     return cast
+
+
+@router.post("/generate")
+def generate():
+    session = session_store.load_session()
+    result = validation.validate_session(session)
+
+    if not result.is_valid:
+        return _json_error(result)
+
+    output = template_gen.render_set_cast_params(session)
+    target = config.MOUNTS["data"] / "set_cast_params.m"
+
+    if target.is_file():
+        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+        backup = target.with_name(f"{target.name}.bak.{timestamp}")
+        backup.write_text(target.read_text(encoding="utf-8"), encoding="utf-8")
+
+    target.write_text(output, encoding="utf-8")
+
+    return {"written_to": str(target), "warnings": result.warnings}
+
+
+def _json_error(result: validation.ValidationResult):
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(status_code=400, content={"errors": result.errors, "warnings": result.warnings})
