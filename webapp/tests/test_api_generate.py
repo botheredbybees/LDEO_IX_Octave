@@ -2,6 +2,7 @@ from datetime import datetime
 
 from fastapi.testclient import TestClient
 
+from webapp import api as api_module
 from webapp import config, main
 
 
@@ -66,6 +67,15 @@ def test_rapid_successive_generates_do_not_collide_or_lose_data(tmp_path, monkey
     existing.write_text("% original hand-written content\n")
     client = TestClient(main.app)
     client.post("/api/session/casts", json=_valid_cast_payload())
+
+    frozen_now = datetime(2026, 1, 1, 12, 0, 0)
+
+    class _FrozenDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return frozen_now
+
+    monkeypatch.setattr(api_module, "datetime", _FrozenDateTime)
 
     client.post("/api/generate")
     client.post("/api/generate")

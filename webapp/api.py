@@ -124,6 +124,10 @@ def generate():
     if target.is_file():
         timestamp = datetime.now().strftime("%Y%m%dT%H%M%S%f")
         backup = target.with_name(f"{target.name}.bak.{timestamp}")
+        suffix = 0
+        while backup.exists():
+            suffix += 1
+            backup = target.with_name(f"{target.name}.bak.{timestamp}.{suffix}")
         backup.write_text(target.read_text(encoding="utf-8"), encoding="utf-8")
 
     target.write_text(output, encoding="utf-8")
