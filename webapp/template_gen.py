@@ -17,6 +17,8 @@ def _render_cast_body(cast: CastEntry) -> list:
     body = []
 
     def add(field, value):
+        if value is None:
+            return
         body.append(f"    {field} = {value};")
 
     add("f.ladcpdo", _quote(cast.ladcpdo))

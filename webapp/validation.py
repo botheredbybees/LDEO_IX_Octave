@@ -8,6 +8,8 @@ REQUIRED_FIELDS = [
     "lat", "lon", "time_start", "time_end",
 ]
 
+_NUMERIC_FIELDS_WHERE_ZERO_IS_VALID = {"ladcp_station", "ladcp_cast", "lat", "lon"}
+
 _FILE_FIELDS = [
     ("ladcp", "ladcpdo"),
     ("ladcp", "ladcpup"),
@@ -31,11 +33,15 @@ def validate_session(session: CruiseSession) -> ValidationResult:
     result = ValidationResult()
 
     for cast in session.casts:
-        cast_errors = [
-            f"{field_name} is required"
-            for field_name in REQUIRED_FIELDS
-            if not getattr(cast, field_name)
-        ]
+        cast_errors = []
+        for field_name in REQUIRED_FIELDS:
+            value = getattr(cast, field_name)
+            if field_name in _NUMERIC_FIELDS_WHERE_ZERO_IS_VALID:
+                missing = value is None
+            else:
+                missing = not value
+            if missing:
+                cast_errors.append(f"{field_name} is required")
         if cast_errors:
             result.errors[cast.id] = cast_errors
 

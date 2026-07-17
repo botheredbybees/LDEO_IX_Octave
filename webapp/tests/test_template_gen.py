@@ -96,3 +96,24 @@ def test_quotes_are_escaped_in_string_fields():
     output = template_gen.render_set_cast_params(session)
 
     assert "p.name = 'o''brien';" in output
+
+
+def test_unset_optional_fields_are_omitted_not_rendered_as_none():
+    cast = CastEntry(
+        cast_name="003",
+        ladcpdo="003DL000.000",
+        ladcpup="003UL000.000",
+        ladcp_station=3,
+        ladcp_cast=1,
+        lat=-15.5,
+        lon=-150.2,
+        time_start=[2015, 4, 11, 17, 36, 23.0],
+        time_end=[2015, 4, 11, 21, 9, 42.0],
+    )
+    session = CruiseSession(casts=[cast])
+
+    output = template_gen.render_set_cast_params(session)
+
+    assert "None" not in output
+    assert "f.ctd_header_lines" not in output
+    assert "p.drot" not in output

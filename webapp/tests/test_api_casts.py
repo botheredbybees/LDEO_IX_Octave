@@ -65,6 +65,19 @@ def test_update_cast_changes_fields(tmp_path, monkeypatch):
     assert response.json()["lat"] == -15.5
 
 
+def test_update_cast_derives_checkpoints_and_res_from_cast_name(tmp_path, monkeypatch):
+    monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
+    client = TestClient(main.app)
+    created = client.post("/api/session/casts", json={}).json()
+
+    response = client.put(f"/api/session/casts/{created['id']}", json={"cast_name": "003"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["checkpoints_file"] == "checkpoints/003"
+    assert body["res_file"] == "V7/003"
+
+
 def test_delete_cast_removes_it(tmp_path, monkeypatch):
     monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
     client = TestClient(main.app)

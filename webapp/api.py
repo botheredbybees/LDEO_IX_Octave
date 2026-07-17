@@ -57,6 +57,10 @@ def update_cast(cast_id: str, patch: CastPatch):
             data = patch.model_dump(exclude_unset=True)
             data.pop("id", None)
             updated = cast.model_copy(update=data)
+            if not updated.checkpoints_file and updated.cast_name:
+                updated.checkpoints_file = f"checkpoints/{updated.cast_name}"
+            if not updated.res_file and updated.cast_name:
+                updated.res_file = f"V7/{updated.cast_name}"
             session.casts[i] = updated
             session_store.save_session(session)
             return updated

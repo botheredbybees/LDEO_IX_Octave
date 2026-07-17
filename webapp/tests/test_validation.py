@@ -36,6 +36,16 @@ def test_missing_required_field_produces_error():
     assert "lat is required" in result.errors[cast.id]
 
 
+def test_zero_lat_and_lon_are_valid_not_missing():
+    cast = _valid_cast(lat=0.0, lon=0.0, ladcp_station=0, ladcp_cast=0)
+    session = CruiseSession(casts=[cast])
+
+    result = validation.validate_session(session)
+
+    assert result.is_valid is True
+    assert cast.id not in result.errors
+
+
 def test_missing_referenced_file_produces_warning_not_error(tmp_path, monkeypatch):
     monkeypatch.setitem(config.MOUNTS, "ladcp", tmp_path)
     cast = _valid_cast(ladcpdo="does-not-exist.000")
