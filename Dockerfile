@@ -13,8 +13,21 @@ COPY stubs/   /opt/stubs/
 # shadow Octave's real plotting functions without touching ldeo_ix/ itself.
 ENV OCTAVE_PATH=/opt/stubs:/opt/ldeo_ix
 
+# Web intake app (forms that generate set_cast_params.m) -- see webapp/.
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      python3 python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+COPY webapp/requirements.txt /opt/webapp/requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /opt/webapp/requirements.txt
+COPY webapp/ /opt/webapp/
+ENV PYTHONPATH=/opt
+
+EXPOSE 8080
+
 # Mount your cruise/cast directory (containing set_cast_params.m and the
-# raw data -- see examples/ and README.md) here.
+# raw data -- see examples/ and README.md) here. Optional source-data
+# mounts: /ladcp_data, /ctd_data, /sadcp_data, /navigation_data.
 WORKDIR /data
 
-ENTRYPOINT ["octave-cli", "--no-gui"]
+ENTRYPOINT ["/opt/webapp/entrypoint.sh"]
+CMD ["serve"]
