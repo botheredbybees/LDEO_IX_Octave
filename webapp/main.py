@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException
 
-from webapp import config, delimited_parser, file_browser, ladcp_scan, paths
+from webapp import api, config, delimited_parser, file_browser, ladcp_scan, paths
 
 app = FastAPI(title="LDEO_IX Cruise/Cast Intake")
+
+app.include_router(api.router, prefix="/api")
 
 
 @app.get("/health")
