@@ -84,3 +84,25 @@ def test_clone_from_netcdf_prefills_known_fields(tmp_path, monkeypatch):
     body = response.json()
     assert body["lat"] == -15.498335
     assert body["lon"] == -150.19699
+
+
+def test_create_cast_ignores_client_supplied_id(tmp_path, monkeypatch):
+    monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
+    client = TestClient(main.app)
+
+    response = client.post("/api/session/casts", json={"id": "attacker-chosen-id", "cast_name": "003"})
+
+    assert response.status_code == 201
+    assert response.json()["id"] != "attacker-chosen-id"
+
+
+def test_update_cast_ignores_client_supplied_id(tmp_path, monkeypatch):
+    monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
+    client = TestClient(main.app)
+    created = client.post("/api/session/casts", json={"cast_name": "003"}).json()
+
+    response = client.put(f"/api/session/casts/{created['id']}", json={"id": "attacker-chosen-id", "lat": -15.5})
+
+    assert response.status_code == 200
+    assert response.json()["id"] == created["id"]
+    assert response.json()["lat"] == -15.5

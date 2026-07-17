@@ -20,6 +20,7 @@ def get_session():
 def create_cast(patch: CastPatch):
     session = session_store.load_session()
     data = patch.model_dump(exclude_unset=True)
+    data.pop("id", None)
     cast = CastEntry(**data)
 
     if not cast.checkpoints_file and cast.cast_name:
@@ -37,7 +38,9 @@ def update_cast(cast_id: str, patch: CastPatch):
     session = session_store.load_session()
     for i, cast in enumerate(session.casts):
         if cast.id == cast_id:
-            updated = cast.model_copy(update=patch.model_dump(exclude_unset=True))
+            data = patch.model_dump(exclude_unset=True)
+            data.pop("id", None)
+            updated = cast.model_copy(update=data)
             session.casts[i] = updated
             session_store.save_session(session)
             return updated
@@ -81,7 +84,7 @@ def create_cast_from_netcdf(path: str):
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"{path!r} not found")
 
-    known_fields = set(CastEntry.model_fields.keys())
+    known_fields = set(CastEntry.model_fields.keys()) - {"id"}
     prefill = {k: v for k, v in attrs.items() if k in known_fields}
 
     session = session_store.load_session()
