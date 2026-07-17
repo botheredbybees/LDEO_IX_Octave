@@ -60,11 +60,14 @@ def test_existing_referenced_file_produces_no_warning(tmp_path, monkeypatch):
 
 
 def test_traversal_attempt_produces_generic_warning_not_a_bypass(tmp_path, monkeypatch):
-    monkeypatch.setitem(config.MOUNTS, "ladcp", tmp_path)
-    cast = _valid_cast(ladcpdo="../../../../etc/passwd")
+    mount = tmp_path / "mount"
+    mount.mkdir()
+    (tmp_path / "secret.txt").write_text("outside the mount")
+    monkeypatch.setitem(config.MOUNTS, "ladcp", mount)
+    cast = _valid_cast(ladcpdo="../secret.txt")
     session = CruiseSession(casts=[cast])
 
     result = validation.validate_session(session)
 
     assert result.is_valid is True
-    assert "../../../../etc/passwd not found under ladcp mount" in result.warnings[cast.id]
+    assert "../secret.txt not found under ladcp mount" in result.warnings[cast.id]
