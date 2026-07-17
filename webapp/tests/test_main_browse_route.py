@@ -40,3 +40,16 @@ def test_browse_endpoint_rejects_traversal(tmp_path, monkeypatch):
     response = client.get("/api/browse/ctd", params={"path": "../../etc"})
 
     assert response.status_code == 400
+
+
+def test_preview_endpoint_returns_sniffed_structure(tmp_path, monkeypatch):
+    (tmp_path / "cast1.cnv").write_text("1.0 2.0 3.0\n4.0 5.0 6.0\n")
+    monkeypatch.setitem(config.MOUNTS, "ctd", tmp_path)
+
+    client = TestClient(main.app)
+    response = client.get("/api/preview/ctd", params={"path": "cast1.cnv"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["header_lines"] == 0
+    assert body["fields_per_line"] == 3
