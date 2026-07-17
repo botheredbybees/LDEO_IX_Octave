@@ -16,16 +16,38 @@ async function refreshCastTable() {
   tbody.innerHTML = "";
   for (const cast of session.casts) {
     const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${cast.cast_name || ""}</td>
-      <td>${cast.ladcp_station ?? ""}</td>
-      <td>${cast.lat ?? ""}</td>
-      <td>${cast.lon ?? ""}</td>
-      <td>
-        <button data-edit="${cast.id}">Edit</button>
-        <button data-clone="${cast.id}">Clone</button>
-        <button data-remove="${cast.id}">Remove</button>
-      </td>`;
+
+    const nameCell = document.createElement("td");
+    nameCell.textContent = cast.cast_name || "";
+    row.appendChild(nameCell);
+
+    const stationCell = document.createElement("td");
+    stationCell.textContent = cast.ladcp_station ?? "";
+    row.appendChild(stationCell);
+
+    const latCell = document.createElement("td");
+    latCell.textContent = cast.lat ?? "";
+    row.appendChild(latCell);
+
+    const lonCell = document.createElement("td");
+    lonCell.textContent = cast.lon ?? "";
+    row.appendChild(lonCell);
+
+    const actionsCell = document.createElement("td");
+    const editButton = document.createElement("button");
+    editButton.textContent = "Edit";
+    editButton.dataset.edit = cast.id;
+    const cloneButton = document.createElement("button");
+    cloneButton.textContent = "Clone";
+    cloneButton.dataset.clone = cast.id;
+    const removeButton = document.createElement("button");
+    removeButton.textContent = "Remove";
+    removeButton.dataset.remove = cast.id;
+    actionsCell.appendChild(editButton);
+    actionsCell.appendChild(cloneButton);
+    actionsCell.appendChild(removeButton);
+    row.appendChild(actionsCell);
+
     tbody.appendChild(row);
   }
 }
@@ -83,20 +105,40 @@ async function renderPreview(mount, pathInputId, targetDivId, roleFields) {
   form.elements.namedItem(`${mount === "ctd" ? "ctd" : "nav"}_header_lines`).value = preview.header_lines;
   form.elements.namedItem(`${mount === "ctd" ? "ctd" : "nav"}_fields_per_line`).value = preview.fields_per_line;
 
-  let html = "<table><tr>";
+  const table = document.createElement("table");
+
+  const headerRow = document.createElement("tr");
   for (let col = 0; col < preview.fields_per_line; col++) {
-    html += `<th><select data-col="${col}"><option value="">-</option>`;
+    const th = document.createElement("th");
+    const select = document.createElement("select");
+    select.dataset.col = col;
+    const blankOption = document.createElement("option");
+    blankOption.value = "";
+    blankOption.textContent = "-";
+    select.appendChild(blankOption);
     for (const role of roleFields) {
-      html += `<option value="${role}">${role}</option>`;
+      const option = document.createElement("option");
+      option.value = role;
+      option.textContent = role;
+      select.appendChild(option);
     }
-    html += "</select></th>";
+    th.appendChild(select);
+    headerRow.appendChild(th);
   }
-  html += "</tr>";
+  table.appendChild(headerRow);
+
   for (const row of preview.preview_rows) {
-    html += "<tr>" + row.map((v) => `<td>${v}</td>`).join("") + "</tr>";
+    const tr = document.createElement("tr");
+    for (const v of row) {
+      const td = document.createElement("td");
+      td.textContent = v;
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
   }
-  html += "</table>";
-  div.innerHTML = html;
+
+  div.innerHTML = "";
+  div.appendChild(table);
 
   div.querySelectorAll("select[data-col]").forEach((select) => {
     select.addEventListener("change", () => {
