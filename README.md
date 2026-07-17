@@ -61,6 +61,13 @@ clone a previous cast (in this session, or from a prior processed cast's
 output `.nc`) as a starting point. Generating writes `/data/set_cast_params.m`
 (backing up any existing file first).
 
+**No authentication:** the web form has no login and anyone who can reach
+the port can browse the mounted directories and overwrite
+`set_cast_params.m`. It's built for a single trusted operator — only
+publish `-p 8080:8080` on a network you trust (e.g. bind to `127.0.0.1`
+instead of all interfaces, or don't publish the port at all and use
+`docker exec`/an SSH tunnel).
+
 ### Direct Octave CLI
 
 The original CLI workflow (LDEO_IX expects one `set_cast_params.m` per cast,
