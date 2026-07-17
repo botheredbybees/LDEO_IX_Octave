@@ -23,10 +23,10 @@ def browse(mount: str, path: str = ""):
 
     try:
         entries = file_browser.list_directory(mount_root, path)
-    except paths.PathOutsideMountError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
-    except NotADirectoryError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+    except paths.PathOutsideMountError:
+        raise HTTPException(status_code=400, detail="path is outside the allowed directory")
+    except NotADirectoryError:
+        raise HTTPException(status_code=400, detail="path is not a directory")
 
     return {
         "entries": [
