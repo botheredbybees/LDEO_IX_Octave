@@ -35,6 +35,8 @@ docker build -t ldeo-ix-octave .
 
 ## Usage
 
+By default, `docker run ldeo-ix-octave` (with no arguments) starts a web server on port 8080 for building `set_cast_params.m`. To use the direct Octave CLI workflow below, append `octave-cli` to your docker run command.
+
 LDEO_IX expects one `set_cast_params.m` per cast, plus the cast's raw data,
 in your current working directory. `process_cast.m` loads it automatically.
 
@@ -47,7 +49,7 @@ in your current working directory. `process_cast.m` loads it automatically.
 2. Run the container with that directory mounted at `/data`:
 
    ```bash
-   docker run --rm -it -v "$(pwd)/my_cast:/data" ldeo-ix-octave
+   docker run --rm -it -v "$(pwd)/my_cast:/data" ldeo-ix-octave octave-cli
    ```
 
    This drops you into `octave-cli` with `ldeo_ix/` and `stubs/` already on
@@ -66,7 +68,7 @@ in your current working directory. `process_cast.m` loads it automatically.
 You can also run a script non-interactively:
 
 ```bash
-docker run --rm -v "$(pwd)/my_cast:/data" ldeo-ix-octave --eval "process_cast(3,1,2)"
+docker run --rm -v "$(pwd)/my_cast:/data" ldeo-ix-octave octave-cli --eval "process_cast(3,1,2)"
 ```
 
 ## Why Octave instead of MATLAB
