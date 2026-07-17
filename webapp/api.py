@@ -108,7 +108,7 @@ def generate():
     target = config.MOUNTS["data"] / "set_cast_params.m"
 
     if target.is_file():
-        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%dT%H%M%S%f")
         backup = target.with_name(f"{target.name}.bak.{timestamp}")
         backup.write_text(target.read_text(encoding="utf-8"), encoding="utf-8")
 

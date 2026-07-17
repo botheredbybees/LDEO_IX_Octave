@@ -58,3 +58,19 @@ def test_generate_backs_up_existing_file(tmp_path, monkeypatch):
     backups = list(tmp_path.glob("set_cast_params.m.bak.*"))
     assert len(backups) == 1
     assert backups[0].read_text() == "% hand-written\n"
+
+
+def test_rapid_successive_generates_do_not_collide_or_lose_data(tmp_path, monkeypatch):
+    monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
+    existing = tmp_path / "set_cast_params.m"
+    existing.write_text("% original hand-written content\n")
+    client = TestClient(main.app)
+    client.post("/api/session/casts", json=_valid_cast_payload())
+
+    client.post("/api/generate")
+    client.post("/api/generate")
+
+    backups = sorted(tmp_path.glob("set_cast_params.m.bak.*"))
+    assert len(backups) == 2
+    backup_contents = {b.read_text() for b in backups}
+    assert "% original hand-written content\n" in backup_contents
