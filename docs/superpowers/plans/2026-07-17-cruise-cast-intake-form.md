@@ -1348,6 +1348,17 @@ def test_existing_referenced_file_produces_no_warning(tmp_path, monkeypatch):
     result = validation.validate_session(session)
 
     assert cast.id not in result.warnings
+
+
+def test_traversal_attempt_produces_generic_warning_not_a_bypass(tmp_path, monkeypatch):
+    monkeypatch.setitem(config.MOUNTS, "ladcp", tmp_path)
+    cast = _valid_cast(ladcpdo="../../../../etc/passwd")
+    session = CruiseSession(casts=[cast])
+
+    result = validation.validate_session(session)
+
+    assert result.is_valid is True
+    assert "../../../../etc/passwd not found under ladcp mount" in result.warnings[cast.id]
 ```
 
 - [ ] **Step 2: Run to verify it fails**
@@ -1360,7 +1371,7 @@ Expected: FAIL (`ModuleNotFoundError`)
 ```python
 from dataclasses import dataclass, field
 
-from webapp import config
+from webapp import config, paths
 from webapp.models import CruiseSession
 
 REQUIRED_FIELDS = [
@@ -1405,13 +1416,23 @@ def validate_session(session: CruiseSession) -> ValidationResult:
             if not relative:
                 continue
             mount_root = config.MOUNTS.get(mount_name)
-            if mount_root is None or not (mount_root / relative).is_file():
+            if mount_root is None:
+                cast_warnings.append(f"{relative} not found under {mount_name} mount")
+                continue
+            try:
+                resolved = paths.resolve_within(mount_root, relative)
+            except paths.PathOutsideMountError:
+                cast_warnings.append(f"{relative} not found under {mount_name} mount")
+                continue
+            if not resolved.is_file():
                 cast_warnings.append(f"{relative} not found under {mount_name} mount")
         if cast_warnings:
             result.warnings[cast.id] = cast_warnings
 
     return result
 ```
+
+**Security note:** this MUST route every candidate path through `paths.resolve_within` before calling `.is_file()` — a cast's file fields (`ladcpdo`, `ctd`, `nav`, etc.) are user-editable strings, and checking `(mount_root / relative).is_file()` directly (without resolving and bounds-checking first) turns this validation step into a path-traversal file-existence oracle: a crafted value like `../../../../etc/passwd` would let a caller learn whether an arbitrary host file exists via the presence/absence of a warning. A traversal attempt is reported with the same generic "not found under mount" warning as a genuinely missing file — it must not surface a different message that would let a caller distinguish "outside the mount" from "inside the mount but missing" (that distinction is itself a smaller oracle).
 
 - [ ] **Step 4: Run to verify it passes**
 
