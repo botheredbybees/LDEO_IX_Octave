@@ -125,10 +125,15 @@ def generate():
         timestamp = datetime.now().strftime("%Y%m%dT%H%M%S%f")
         backup = target.with_name(f"{target.name}.bak.{timestamp}")
         suffix = 0
-        while backup.exists():
-            suffix += 1
-            backup = target.with_name(f"{target.name}.bak.{timestamp}.{suffix}")
-        backup.write_text(target.read_text(encoding="utf-8"), encoding="utf-8")
+        original_content = target.read_text(encoding="utf-8")
+        while True:
+            try:
+                with backup.open("x", encoding="utf-8") as f:
+                    f.write(original_content)
+                break
+            except FileExistsError:
+                suffix += 1
+                backup = target.with_name(f"{target.name}.bak.{timestamp}.{suffix}")
 
     target.write_text(output, encoding="utf-8")
 
