@@ -1,11 +1,15 @@
-**Status as of 2026-08-18: both PRs open.** After Peter personally
-verified upstream `master` hadn't moved and reviewed both diffs, opened:
+**Status as of 2026-08-18: all three items posted.** After Peter
+personally verified upstream `master` hadn't moved and reviewed both
+diffs:
 
 - PR #1 (portability): https://github.com/athurnherr/LDEO_IX/pull/5
 - PR #2 (correctness): https://github.com/athurnherr/LDEO_IX/pull/6
+- Issue (licensing + informational findings): https://github.com/athurnherr/LDEO_IX/issues/7
+  (greeting simplified from the draft's "Andreas (or whoever's picking
+  this up)" to a plain "Hi Andreas" before posting, since he's the
+  confirmed repo owner)
 
-The licensing/informational-findings issue (Draft 3 below) is still just
-a draft — not yet posted, pending a separate go-ahead.
+Nothing further to action here unless/until Thurnherr responds.
 
 ---
 
