@@ -1,9 +1,11 @@
-**Status as of 2026-08-16: drafts only.** Both fix branches
-(`octave-portability-fixes`, `fix-nav-time-base-and-gradient-swap`) are
-pushed to `botheredbybees/LDEO_IX` (a fork of `athurnherr/LDEO_IX`), but
-**no PR or issue has been opened against upstream yet** — nothing here is
-visible to the upstream maintainer until Peter reviews these drafts and
-says go.
+**Status as of 2026-08-18: both PRs open.** After Peter personally
+verified upstream `master` hadn't moved and reviewed both diffs, opened:
+
+- PR #1 (portability): https://github.com/athurnherr/LDEO_IX/pull/5
+- PR #2 (correctness): https://github.com/athurnherr/LDEO_IX/pull/6
+
+The licensing/informational-findings issue (Draft 3 below) is still just
+a draft — not yet posted, pending a separate go-ahead.
 
 ---
 
