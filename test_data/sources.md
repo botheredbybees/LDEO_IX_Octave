@@ -104,6 +104,48 @@ mismatch a from-scratch intake form needs to handle.
 No on-drive README — provenance is Peter's own field copy, not a public
 archive; nothing further to cite/link.
 
+## `202324050_nuyina/` — RSV Nuyina voyage 202324050, 2024
+
+A fourth organization/vessel (RSV Nuyina, AAD's current icebreaker — the
+actual ship this whole workspace is about) and a fourth raw-LADCP
+filename convention. Sourced from Peter's local copy
+(`/media/peter_sha/PA018654/AAD/202324050/`), not downloaded. Unlike
+`in2021_v04_investigator/`, this has **multiple casts** and **two
+shipboard ADCP frequencies**:
+
+| Subdir | Contents | Format | Size |
+|---|---|---|---|
+| `ladcp/` | `2324050_{004,005,006}_{down,up}_ladcp.000` — 3 casts, both heads each | **Genuine raw RDI PD0** (`0x7F 0x7F` header verified) | 12 MB |
+| `ctd/seasave_raw/` | `202324050_{001..010}.hex` + `.bl`/`.hdr`/`.XMLCON` — 10 casts | **Genuine raw Sea-Bird hex**, same family as `in2021_v04`'s but a fully independent cruise/instrument-serial pairing | 86 MB |
+| `ctd/live_xml_flatfiles/` | `ctd-2024-06-*.txt`, one per UTC day | **A third, distinct CTD format** — not raw hex, not LDEO's 2Hz ASCII either: a timestamped live broadcast log of Seasave's real-time "Converted Data" stream, each line `<UTC-ISO-timestamp>,<XML fragment>` (field definitions, then one `<Scan>` element per second across the whole day, casts and steaming mixed together, not pre-cut per station). Kept for reference/format-diversity even though nothing in this pipeline parses it today. | 31 MB |
+| `sadcp/os150/`, `sadcp/os38/` | RDI VmDas-format shipboard ADCP raw (`.ENS`/`.ENR`/`.ENX`/`.LOG`/`.LTA`/`.N1R`/`.N2R`/`.NMS`/`.STA`/`.VMO`) — **two independent frequencies** (150 kHz + 38 kHz, different max range/resolution trade-off), continuous underway logging, not per-cast | RDI VmDas | 229 MB + 274 MB |
+
+No dedicated navigation/Seapath data in this extract — Nuyina's real-time
+nav lives in NuyinAPI/OpenRVDAS elsewhere in the pipeline, just not part
+of what got copied here. `ctd/ctd_castaway/` on the source drive is an
+empty shell (only an auto-generated directory-listing `index.html`, no
+actual Castaway CTD casts this voyage) — not copied in, since there's no
+data behind it, but worth knowing the folder existing doesn't mean data
+exists.
+
+**A fourth distinct raw-LADCP filename convention, confirmed against
+`ladcp_scan.py`:** `<voyage>_<station>_down/up_ladcp.000` — running the
+same scan that returned `[]` for `in2021_v04`'s `M002_000.000`/
+`S002_000.000` also returns `[]` here. Three real organizations, three
+different raw-LADCP naming schemes, zero matches against the one
+hardcoded pattern — this is the concrete evidence behind the "make
+pairing configurable rather than pattern-match every convention"
+decision (2026-08-16 conversation, item 1/"option B").
+
+**A real voyage-ID mislabel, worth knowing about (not a copying error):**
+the `os38` files are named `202324030_OS38_...` — `...030`, not `...050`
+— while the parent directory, the `os150` files, and every LADCP/CTD
+filename all say `202324050`. Whatever logged the OS38 instrument had its
+voyage ID mistyped at the time; the data itself is presumably fine, just
+mislabeled. If the intake form ever cross-checks that raw filenames match
+the voyage/cruise ID it's ingesting under, this is a real example of that
+check needing to warn rather than hard-fail.
+
 ## Follow-up
 
 - The AADC courtesy-email item above is closed out (moot, not pursued).
