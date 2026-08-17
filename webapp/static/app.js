@@ -152,6 +152,71 @@ async function renderPreview(mount, pathInputId, targetDivId, roleFields) {
   });
 }
 
+async function renderBrowserPanel(panelId, mount, targetInputId, relativePath) {
+  const panel = document.getElementById(panelId);
+  panel.dataset.currentPath = relativePath;
+  panel.innerHTML = "";
+
+  const pathLine = document.createElement("div");
+  pathLine.className = "browser-path";
+  pathLine.textContent = `${mount}:/${relativePath}`;
+  panel.appendChild(pathLine);
+
+  let data;
+  try {
+    data = await api(`/api/browse/${mount}?path=${encodeURIComponent(relativePath)}`);
+  } catch (e) {
+    const err = document.createElement("div");
+    err.className = "browser-error";
+    err.textContent = (e.body && e.body.detail) || `could not browse ${mount}`;
+    panel.appendChild(err);
+    return;
+  }
+
+  if (relativePath) {
+    const up = document.createElement("div");
+    up.className = "browser-entry is-dir";
+    up.textContent = ".. (up)";
+    up.addEventListener("click", () => {
+      const parent = relativePath.split("/").slice(0, -1).join("/");
+      renderBrowserPanel(panelId, mount, targetInputId, parent);
+    });
+    panel.appendChild(up);
+  }
+
+  for (const entry of data.entries) {
+    const row = document.createElement("div");
+    row.className = entry.is_dir ? "browser-entry is-dir" : "browser-entry";
+    row.textContent = entry.is_dir ? `${entry.name}/` : entry.name;
+    row.addEventListener("click", () => {
+      if (entry.is_dir) {
+        renderBrowserPanel(panelId, mount, targetInputId, entry.relative_path);
+      } else {
+        document.getElementById(targetInputId).value = entry.relative_path;
+        panel.hidden = true;
+      }
+    });
+    panel.appendChild(row);
+  }
+}
+
+function initBrowser(buttonId, mount, targetInputId, panelId) {
+  document.getElementById(buttonId).addEventListener("click", () => {
+    const panel = document.getElementById(panelId);
+    if (!panel.hidden) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+    renderBrowserPanel(panelId, mount, targetInputId, panel.dataset.currentPath || "");
+  });
+}
+
+initBrowser("browse-ctd", "ctd", "ctd-path", "ctd-browser");
+initBrowser("browse-nav", "nav", "nav-path", "nav-browser");
+initBrowser("browse-ladcpdo", "ladcp", "ladcpdo-path", "ladcpdo-browser");
+initBrowser("browse-ladcpup", "ladcp", "ladcpup-path", "ladcpup-browser");
+
 document.getElementById("preview-ctd").addEventListener("click", () => {
   renderPreview("ctd", "ctd-path", "ctd-preview", ["time", "pressure", "temperature", "salinity"]);
 });

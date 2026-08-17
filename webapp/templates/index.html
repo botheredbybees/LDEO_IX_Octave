@@ -25,13 +25,19 @@
       <label>Name <input name="cast_name"></label>
       <label>Station <input name="ladcp_station" type="number"></label>
       <label>Cast <input name="ladcp_cast" type="number"></label>
-      <label>Down file <input name="ladcpdo"></label>
-      <label>Up file <input name="ladcpup"></label>
+      <label>Down file <input name="ladcpdo" id="ladcpdo-path"></label>
+      <button type="button" id="browse-ladcpdo">Browse</button>
+      <div class="file-browser" id="ladcpdo-browser" hidden></div>
+      <label>Up file <input name="ladcpup" id="ladcpup-path"></label>
+      <button type="button" id="browse-ladcpup">Browse</button>
+      <div class="file-browser" id="ladcpup-browser" hidden></div>
     </fieldset>
 
     <fieldset>
       <legend>CTD</legend>
       <label>File <input name="ctd" id="ctd-path"></label>
+      <button type="button" id="browse-ctd">Browse</button>
+      <div class="file-browser" id="ctd-browser" hidden></div>
       <button type="button" id="preview-ctd">Preview / map columns</button>
       <div id="ctd-preview"></div>
       <label>Header lines <input name="ctd_header_lines" type="number"></label>
@@ -46,6 +52,8 @@
     <fieldset>
       <legend>Nav</legend>
       <label>File <input name="nav" id="nav-path"></label>
+      <button type="button" id="browse-nav">Browse</button>
+      <div class="file-browser" id="nav-browser" hidden></div>
       <button type="button" id="preview-nav">Preview / map columns</button>
       <div id="nav-preview"></div>
       <label>Header lines <input name="nav_header_lines" type="number"></label>
