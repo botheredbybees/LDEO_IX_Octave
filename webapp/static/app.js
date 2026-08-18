@@ -96,14 +96,14 @@ document.getElementById("apply-ladcp-suggestion").addEventListener("click", () =
   form.elements.namedItem("cast_name").value = chosen.station;
 });
 
-async function renderPreview(mount, pathInputId, targetDivId, roleFields) {
+async function renderPreview(mount, pathInputId, targetDivId, roleFields, fieldPrefix) {
   const path = document.getElementById(pathInputId).value;
   if (!path) return;
   const preview = await api(`/api/preview/${mount}?path=${encodeURIComponent(path)}`);
   const div = document.getElementById(targetDivId);
   const form = document.getElementById("cast-form");
-  form.elements.namedItem(`${mount === "ctd" ? "ctd" : "nav"}_header_lines`).value = preview.header_lines;
-  form.elements.namedItem(`${mount === "ctd" ? "ctd" : "nav"}_fields_per_line`).value = preview.fields_per_line;
+  form.elements.namedItem(`${fieldPrefix}_header_lines`).value = preview.header_lines;
+  form.elements.namedItem(`${fieldPrefix}_fields_per_line`).value = preview.fields_per_line;
 
   const table = document.createElement("table");
 
@@ -145,7 +145,7 @@ async function renderPreview(mount, pathInputId, targetDivId, roleFields) {
       const col = parseInt(select.dataset.col, 10) + 1;
       const role = select.value;
       if (!role) return;
-      const fieldName = `${mount === "ctd" ? "ctd" : "nav"}_${role}_field`;
+      const fieldName = `${fieldPrefix}_${role}_field`;
       const field = form.elements.namedItem(fieldName);
       if (field) field.value = col;
     });
@@ -258,10 +258,10 @@ document.getElementById("run-quickconvert").addEventListener("click", async () =
 document.getElementById("preview-ctd").addEventListener("click", () => {
   const ctdPath = document.getElementById("ctd-path").value;
   const mount = ctdPath.endsWith(QUICKCONVERT_SUFFIX) ? "data" : "ctd";
-  renderPreview(mount, "ctd-path", "ctd-preview", ["time", "pressure", "temperature", "salinity"]);
+  renderPreview(mount, "ctd-path", "ctd-preview", ["time", "pressure", "temperature", "salinity"], "ctd");
 });
 document.getElementById("preview-nav").addEventListener("click", () => {
-  renderPreview("nav", "nav-path", "nav-preview", ["time", "lat", "lon"]);
+  renderPreview("nav", "nav-path", "nav-preview", ["time", "lat", "lon"], "nav");
 });
 
 document.getElementById("add-cast").addEventListener("click", async () => {
