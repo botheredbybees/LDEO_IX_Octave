@@ -114,23 +114,11 @@ async function renderPreview(mount, pathInputId, targetDivId, roleFields, fieldP
   form.elements.namedItem(`${fieldPrefix}_fields_per_line`).value = preview.fields_per_line;
 
   const table = document.createElement("table");
-
   const headerRow = document.createElement("tr");
+  const columnNames = preview.column_names;
   for (let col = 0; col < preview.fields_per_line; col++) {
     const th = document.createElement("th");
-    const select = document.createElement("select");
-    select.dataset.col = col;
-    const blankOption = document.createElement("option");
-    blankOption.value = "";
-    blankOption.textContent = "-";
-    select.appendChild(blankOption);
-    for (const role of roleFields) {
-      const option = document.createElement("option");
-      option.value = role;
-      option.textContent = role;
-      select.appendChild(option);
-    }
-    th.appendChild(select);
+    th.textContent = columnNames ? columnNames[col] : `col ${col + 1}`;
     headerRow.appendChild(th);
   }
   table.appendChild(headerRow);
@@ -148,17 +136,86 @@ async function renderPreview(mount, pathInputId, targetDivId, roleFields, fieldP
   div.innerHTML = "";
   div.appendChild(table);
 
-  div.querySelectorAll("select[data-col]").forEach((select) => {
-    select.addEventListener("change", () => {
-      const col = parseInt(select.dataset.col, 10) + 1;
-      const role = select.value;
-      if (!role) return;
-      const fieldName = `${fieldPrefix}_${role}_field`;
-      const field = form.elements.namedItem(fieldName);
-      if (field) field.value = col;
-    });
-  });
+  for (const role of roleFields) {
+    const inputName = `${fieldPrefix}_${role}_field`;
+    if (columnNames) {
+      const suggestedIndex = preview.suggested_roles[role] ?? null;
+      populateFieldMapSelect(inputName, columnNames, suggestedIndex);
+    } else {
+      setFieldMapMode(inputName, "manual");
+    }
+  }
 }
+
+function fieldMapContainer(inputName) {
+  return document.querySelector(`.field-map[data-role-field="${inputName}"]`);
+}
+
+function setFieldMapMode(inputName, mode) {
+  const container = fieldMapContainer(inputName);
+  if (!container) return;
+  const select = container.querySelector(".field-map-select");
+  const manual = container.querySelector(".field-map-manual");
+  const toggle = container.querySelector(".field-map-toggle");
+  if (mode === "select" && select.options.length > 1) {
+    select.hidden = false;
+    manual.hidden = true;
+    toggle.textContent = "Enter index manually";
+    toggle.disabled = false;
+    container.dataset.mode = "select";
+  } else {
+    select.hidden = true;
+    manual.hidden = false;
+    toggle.textContent = "Choose from detected columns";
+    toggle.disabled = select.options.length <= 1;
+    container.dataset.mode = "manual";
+  }
+}
+
+function populateFieldMapSelect(inputName, columnNames, suggestedIndex) {
+  const container = fieldMapContainer(inputName);
+  if (!container) return;
+  const select = container.querySelector(".field-map-select");
+  const manual = container.querySelector(".field-map-manual");
+
+  select.innerHTML = "";
+  const blank = document.createElement("option");
+  blank.value = "";
+  blank.textContent = "-";
+  select.appendChild(blank);
+  columnNames.forEach((name, idx) => {
+    const col = idx + 1;
+    const option = document.createElement("option");
+    option.value = String(col);
+    option.textContent = `${col}: ${name}`;
+    select.appendChild(option);
+  });
+
+  select.onchange = () => {
+    manual.value = select.value;
+  };
+
+  if (manual.value) {
+    // An explicit value already exists (typed manually, or loaded from
+    // a saved cast) -- reflect it in the select rather than silently
+    // overriding it with the auto-suggestion.
+    select.value = manual.value;
+  } else if (suggestedIndex != null) {
+    select.value = String(suggestedIndex);
+    manual.value = String(suggestedIndex);
+  }
+
+  setFieldMapMode(inputName, "select");
+}
+
+document.querySelectorAll(".field-map-toggle").forEach((toggle) => {
+  toggle.addEventListener("click", () => {
+    const container = toggle.closest(".field-map");
+    const inputName = container.dataset.roleField;
+    const nextMode = container.dataset.mode === "select" ? "manual" : "select";
+    setFieldMapMode(inputName, nextMode);
+  });
+});
 
 async function renderBrowserPanel(panelId, mount, targetInputId, relativePath) {
   const panel = document.getElementById(panelId);
@@ -304,7 +361,8 @@ document.getElementById("cast-form").addEventListener("submit", async (event) =>
   for (const element of form.elements) {
     if (!element.name || element.name.endsWith("_raw")) continue;
     if (element.value === "") continue;
-    payload[element.name] = element.type === "number" ? Number(element.value) : element.value;
+    const isNumericSelect = element.tagName === "SELECT" && element.value !== "" && !Number.isNaN(Number(element.value));
+    payload[element.name] = (element.type === "number" || isNumericSelect) ? Number(element.value) : element.value;
   }
   const startRaw = form.elements.namedItem("time_start_raw").value;
   const endRaw = form.elements.namedItem("time_end_raw").value;
