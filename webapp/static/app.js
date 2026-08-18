@@ -1,4 +1,4 @@
-const state = { editingCastId: null };
+const state = { editingCastId: null, lastSavedSnapshot: null };
 
 async function api(path, options) {
   const response = await fetch(path, options);
@@ -7,6 +7,32 @@ async function api(path, options) {
     throw { status: response.status, body };
   }
   return response.status === 204 ? null : response.json();
+}
+
+function serializeCastForm() {
+  const form = document.getElementById("cast-form");
+  const values = {};
+  for (const element of form.elements) {
+    if (!element.name) continue;
+    values[element.name] = element.value;
+  }
+  return JSON.stringify(values);
+}
+
+function setSaveState(text, className) {
+  const el = document.getElementById("save-state");
+  el.textContent = text;
+  el.className = `save-state ${className}`;
+}
+
+function updateSaveStateFromForm() {
+  if (state.lastSavedSnapshot === null) return;
+  const current = serializeCastForm();
+  if (current === state.lastSavedSnapshot) {
+    setSaveState("Saved", "saved");
+  } else {
+    setSaveState("Unsaved changes", "unsaved");
+  }
 }
 
 async function refreshCastList() {
@@ -81,6 +107,8 @@ async function openEditor(castId) {
   updateQuickConvertWarning();
   document.getElementById("cast-editor").hidden = false;
   await loadLadcpSuggestions();
+  state.lastSavedSnapshot = serializeCastForm();
+  setSaveState("Saved", "saved");
 }
 
 async function loadLadcpSuggestions() {
@@ -334,6 +362,8 @@ function updateQuickConvertWarning() {
 
 document.getElementById("ctd-path").addEventListener("input", updateQuickConvertWarning);
 
+document.getElementById("cast-form").addEventListener("input", updateSaveStateFromForm);
+
 document.getElementById("run-quickconvert").addEventListener("click", async () => {
   const hexPath = document.getElementById("quickconvert-hex-path").value;
   const xmlconPath = document.getElementById("quickconvert-xmlcon-path").value;
@@ -413,6 +443,8 @@ document.getElementById("cast-form").addEventListener("submit", async (event) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+  state.lastSavedSnapshot = serializeCastForm();
+  setSaveState("Saved", "saved");
   document.getElementById("cast-editor").hidden = true;
   await refreshCastList();
 });

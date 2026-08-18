@@ -172,3 +172,17 @@ input:focus, select:focus, textarea:focus {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+#save-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.save-state {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.save-state.unsaved { color: var(--color-warning); }
+.save-state.saved { color: var(--color-accent); }
