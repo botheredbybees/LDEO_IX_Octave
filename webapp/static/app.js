@@ -118,6 +118,15 @@ async function openEditor(castId) {
     // this cast, so any leftover flag from a previously-edited cast must not
     // survive into this one (see populateFieldMapSelect).
     container.dataset.autoSuggested = "false";
+    // Reset display mode too: column_names isn't persisted across page loads,
+    // so a field-map container left in "select" mode from an earlier preview
+    // this session (this cast's own, or a different cast's -- containers are
+    // shared DOM keyed by role name) must not survive into this cast's Edit
+    // view, or it silently shows a blank "-" select over a correct hidden
+    // value instead of the plain visible number the value actually is.
+    const inputName = container.dataset.roleField;
+    clearFieldMapSelect(inputName);
+    setFieldMapMode(inputName, "manual");
   });
   for (const [key, value] of Object.entries(cast)) {
     const field = form.elements.namedItem(key);
