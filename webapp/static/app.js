@@ -9,46 +9,53 @@ async function api(path, options) {
   return response.status === 204 ? null : response.json();
 }
 
-async function refreshCastTable() {
+async function refreshCastList() {
   const session = await api("/api/session");
   document.getElementById("cruise-id").value = session.cruise_id || "";
-  const tbody = document.querySelector("#cast-table tbody");
-  tbody.innerHTML = "";
+  const container = document.getElementById("cast-cards");
+  container.innerHTML = "";
   for (const cast of session.casts) {
-    const row = document.createElement("tr");
+    const card = document.createElement("div");
+    card.className = "cast-card";
 
-    const nameCell = document.createElement("td");
-    nameCell.textContent = cast.cast_name || "";
-    row.appendChild(nameCell);
+    const summary = document.createElement("div");
+    summary.className = "cast-card-summary";
+    const name = document.createElement("span");
+    name.className = "cast-card-name";
+    name.textContent = cast.cast_name || "(unnamed cast)";
+    const meta = document.createElement("span");
+    meta.className = "cast-card-meta";
+    const station = cast.ladcp_station ?? "?";
+    const lat = cast.lat ?? "?";
+    const lon = cast.lon ?? "?";
+    meta.textContent = `Station ${station} · ${lat}, ${lon}`;
+    summary.appendChild(name);
+    summary.appendChild(meta);
 
-    const stationCell = document.createElement("td");
-    stationCell.textContent = cast.ladcp_station ?? "";
-    row.appendChild(stationCell);
-
-    const latCell = document.createElement("td");
-    latCell.textContent = cast.lat ?? "";
-    row.appendChild(latCell);
-
-    const lonCell = document.createElement("td");
-    lonCell.textContent = cast.lon ?? "";
-    row.appendChild(lonCell);
-
-    const actionsCell = document.createElement("td");
+    const actions = document.createElement("div");
+    actions.className = "cast-card-actions";
     const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "btn btn-secondary";
     editButton.textContent = "Edit";
     editButton.dataset.edit = cast.id;
     const cloneButton = document.createElement("button");
+    cloneButton.type = "button";
+    cloneButton.className = "btn btn-secondary";
     cloneButton.textContent = "Clone";
     cloneButton.dataset.clone = cast.id;
     const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "btn btn-danger";
     removeButton.textContent = "Remove";
     removeButton.dataset.remove = cast.id;
-    actionsCell.appendChild(editButton);
-    actionsCell.appendChild(cloneButton);
-    actionsCell.appendChild(removeButton);
-    row.appendChild(actionsCell);
+    actions.appendChild(editButton);
+    actions.appendChild(cloneButton);
+    actions.appendChild(removeButton);
 
-    tbody.appendChild(row);
+    card.appendChild(summary);
+    card.appendChild(actions);
+    container.appendChild(card);
   }
 }
 
@@ -271,22 +278,22 @@ document.getElementById("add-cast").addEventListener("click", async () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({}),
   });
-  await refreshCastTable();
+  await refreshCastList();
   await openEditor(created.id);
 });
 
-document.querySelector("#cast-table tbody").parentElement.addEventListener("click", async (event) => {
+document.getElementById("cast-cards").addEventListener("click", async (event) => {
   const editId = event.target.dataset.edit;
   const cloneId = event.target.dataset.clone;
   const removeId = event.target.dataset.remove;
   if (editId) await openEditor(editId);
   if (cloneId) {
     await api(`/api/session/casts/${cloneId}/clone`, { method: "POST" });
-    await refreshCastTable();
+    await refreshCastList();
   }
   if (removeId) {
     await api(`/api/session/casts/${removeId}`, { method: "DELETE" });
-    await refreshCastTable();
+    await refreshCastList();
   }
 });
 
@@ -310,7 +317,7 @@ document.getElementById("cast-form").addEventListener("submit", async (event) =>
     body: JSON.stringify(payload),
   });
   document.getElementById("cast-editor").hidden = true;
-  await refreshCastTable();
+  await refreshCastList();
 });
 
 document.getElementById("cruise-id").addEventListener("change", async (event) => {
@@ -333,4 +340,4 @@ document.getElementById("generate").addEventListener("click", async () => {
   }
 });
 
-refreshCastTable();
+refreshCastList();

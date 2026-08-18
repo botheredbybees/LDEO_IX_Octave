@@ -100,3 +100,53 @@ input:focus, select:focus, textarea:focus {
 
 .error { color: var(--color-danger); }
 .warning { color: var(--color-warning); }
+
+.eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.card > legend, .card > h2, .card > h3 {
+  padding: 0 var(--space-2);
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+.field-grid label { margin-top: var(--space-3); }
+
+.cast-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.cast-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.cast-card-summary { display: flex; flex-direction: column; gap: var(--space-2); }
+.cast-card-name { font-weight: 600; }
+.cast-card-meta { color: var(--color-text-muted); font-size: 0.85rem; }
+.cast-card-actions { display: flex; gap: var(--space-2); }
