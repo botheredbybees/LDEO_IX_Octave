@@ -81,3 +81,28 @@ def test_traversal_attempt_produces_generic_warning_not_a_bypass(tmp_path, monke
 
     assert result.is_valid is True
     assert "../secret.txt not found under ladcp mount" in result.warnings[cast.id]
+
+
+def test_quick_converted_ctd_checked_against_data_mount_not_ctd_mount(tmp_path, monkeypatch):
+    data_mount = tmp_path / "data"
+    ctd_mount = tmp_path / "ctd"
+    ladcp_mount = tmp_path / "ladcp"
+    data_mount.mkdir()
+    ctd_mount.mkdir()
+    ladcp_mount.mkdir()
+    quick_convert_dir = data_mount / "quick_convert"
+    quick_convert_dir.mkdir()
+    (quick_convert_dir / "cast.UNVALIDATED_QUICKCONVERT.cnv").write_text("fake cnv")
+    (ladcp_mount / "003DL000.000").write_text("")
+    (ladcp_mount / "003UL000.000").write_text("")
+    monkeypatch.setitem(config.MOUNTS, "data", data_mount)
+    monkeypatch.setitem(config.MOUNTS, "ctd", ctd_mount)
+    monkeypatch.setitem(config.MOUNTS, "ladcp", ladcp_mount)
+
+    session = CruiseSession(casts=[_valid_cast(
+        ctd="quick_convert/cast.UNVALIDATED_QUICKCONVERT.cnv",
+    )])
+
+    result = validation.validate_session(session)
+
+    assert result.warnings == {}

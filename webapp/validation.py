@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from webapp import config, paths
+from webapp import config, paths, quick_convert
 from webapp.models import CruiseSession
 
 REQUIRED_FIELDS = [
@@ -50,7 +50,10 @@ def validate_session(session: CruiseSession) -> ValidationResult:
             relative = getattr(cast, field_name)
             if not relative:
                 continue
-            mount_root = config.MOUNTS.get(mount_name)
+            if field_name == "ctd" and relative.endswith(quick_convert.QUICKCONVERT_SUFFIX):
+                mount_root = config.MOUNTS.get("data")
+            else:
+                mount_root = config.MOUNTS.get(mount_name)
             if mount_root is None:
                 cast_warnings.append(f"{relative} not found under {mount_name} mount")
                 continue
