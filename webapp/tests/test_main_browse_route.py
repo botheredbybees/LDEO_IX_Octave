@@ -55,6 +55,36 @@ def test_preview_endpoint_returns_sniffed_structure(tmp_path, monkeypatch):
     assert body["fields_per_line"] == 3
 
 
+def test_preview_endpoint_returns_column_names_and_suggested_roles(tmp_path, monkeypatch):
+    (tmp_path / "cast1.all").write_text(
+        "CTDPRS     CTDTMP    CTDSAL\n"
+        "    2.0    -9.0000    -9.0000\n"
+        "    4.0     0.1258    33.1138\n"
+    )
+    monkeypatch.setitem(config.MOUNTS, "ctd", tmp_path)
+
+    client = TestClient(main.app)
+    response = client.get("/api/preview/ctd", params={"path": "cast1.all"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["column_names"] == ["CTDPRS", "CTDTMP", "CTDSAL"]
+    assert body["suggested_roles"] == {"pressure": 1, "temperature": 2, "salinity": 3}
+
+
+def test_preview_endpoint_returns_null_column_names_for_headerless_file(tmp_path, monkeypatch):
+    (tmp_path / "cast1.cnv").write_text("1.0 2.0 3.0\n4.0 5.0 6.0\n")
+    monkeypatch.setitem(config.MOUNTS, "ctd", tmp_path)
+
+    client = TestClient(main.app)
+    response = client.get("/api/preview/ctd", params={"path": "cast1.cnv"})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["column_names"] is None
+    assert body["suggested_roles"] == {}
+
+
 def test_ladcp_scan_endpoint(tmp_path, monkeypatch):
     (tmp_path / "003DL000.000").write_text("")
     (tmp_path / "003UL000.000").write_text("")

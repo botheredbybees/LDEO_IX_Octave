@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from webapp import api, config, delimited_parser, file_browser, ladcp_scan, paths, quick_convert
+from webapp import api, config, delimited_parser, field_role_suggest, file_browser, ladcp_scan, paths, quick_convert
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -72,6 +72,8 @@ def preview_file(mount: str, path: str):
         "header_lines": preview.header_lines,
         "fields_per_line": preview.fields_per_line,
         "preview_rows": preview.preview_rows,
+        "column_names": preview.column_names,
+        "suggested_roles": field_role_suggest.suggest_roles(preview.column_names),
     }
 
 
