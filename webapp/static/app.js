@@ -65,6 +65,13 @@ async function openEditor(castId) {
   state.editingCastId = castId || null;
   const form = document.getElementById("cast-form");
   form.reset();
+  document.querySelectorAll(".field-map").forEach((container) => {
+    // A value about to be applied below (or left blank) is either a deliberate
+    // saved-cast value or nothing at all -- never a fresh auto-suggestion for
+    // this cast, so any leftover flag from a previously-edited cast must not
+    // survive into this one (see populateFieldMapSelect).
+    container.dataset.autoSuggested = "false";
+  });
   for (const [key, value] of Object.entries(cast)) {
     const field = form.elements.namedItem(key);
     if (field) field.value = value ?? "";
@@ -138,6 +145,12 @@ async function renderPreview(mount, pathInputId, targetDivId, roleFields, fieldP
 
   for (const role of roleFields) {
     const inputName = `${fieldPrefix}_${role}_field`;
+    // Clear out any options left over from a previous preview of a different
+    // file before deciding this preview's mode -- otherwise a headerless file
+    // previewed right after a named-header one inherits the old file's
+    // options and its toggle button stays wrongly clickable (setFieldMapMode
+    // gauges "anything to choose from" purely off select.options.length).
+    clearFieldMapSelect(inputName);
     if (columnNames) {
       const suggestedIndex = preview.suggested_roles[role] ?? null;
       populateFieldMapSelect(inputName, columnNames, suggestedIndex);
@@ -149,6 +162,12 @@ async function renderPreview(mount, pathInputId, targetDivId, roleFields, fieldP
 
 function fieldMapContainer(inputName) {
   return document.querySelector(`.field-map[data-role-field="${inputName}"]`);
+}
+
+function clearFieldMapSelect(inputName) {
+  const container = fieldMapContainer(inputName);
+  if (!container) return;
+  container.querySelector(".field-map-select").innerHTML = "";
 }
 
 function setFieldMapMode(inputName, mode) {
@@ -193,16 +212,27 @@ function populateFieldMapSelect(inputName, columnNames, suggestedIndex) {
 
   select.onchange = () => {
     manual.value = select.value;
+    container.dataset.autoSuggested = "false";
   };
 
-  if (manual.value) {
-    // An explicit value already exists (typed manually, or loaded from
-    // a saved cast) -- reflect it in the select rather than silently
-    // overriding it with the auto-suggestion.
+  // manual.value being non-empty is not by itself proof of a deliberate
+  // choice -- it might just be this same role field's own auto-suggestion
+  // from an earlier preview of a different file in this session. Only
+  // preserve it when it was NOT auto-suggested (i.e. the user typed it,
+  // picked it from a select, or it came from a loaded saved cast); a
+  // leftover auto-suggested value is safe, and correct, to overwrite with
+  // this preview's fresh suggestion (or clear, if this file has none).
+  const hadAutoSuggestedValue = container.dataset.autoSuggested === "true";
+  if (manual.value && !hadAutoSuggestedValue) {
     select.value = manual.value;
   } else if (suggestedIndex != null) {
     select.value = String(suggestedIndex);
     manual.value = String(suggestedIndex);
+    container.dataset.autoSuggested = "true";
+  } else {
+    select.value = "";
+    manual.value = "";
+    container.dataset.autoSuggested = "false";
   }
 
   setFieldMapMode(inputName, "select");
@@ -214,6 +244,15 @@ document.querySelectorAll(".field-map-toggle").forEach((toggle) => {
     const inputName = container.dataset.roleField;
     const nextMode = container.dataset.mode === "select" ? "manual" : "select";
     setFieldMapMode(inputName, nextMode);
+  });
+});
+
+document.querySelectorAll(".field-map-manual").forEach((manual) => {
+  manual.addEventListener("input", () => {
+    // A direct edit is always deliberate -- never let a later preview's
+    // auto-suggest silently overwrite it (see populateFieldMapSelect).
+    const container = manual.closest(".field-map");
+    if (container) container.dataset.autoSuggested = "false";
   });
 });
 
