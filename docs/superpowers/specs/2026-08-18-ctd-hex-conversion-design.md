@@ -87,57 +87,37 @@ overstating the risk in the other direction.
 
 ## Architecture
 
-**Dependency/build finding that reshaped this section during planning,
-not anticipated in the options analysis above:** `ctdam` (and
-`seabirdscientific`) require **Python ≥3.12**. The Dockerfile's base
-image (`gnuoctave/octave:9.2.0`) is Ubuntu 22.04, whose stock
-`apt-get install python3` is 3.10 — what the existing webapp (and this
-dev machine) already runs. Two ways to handle that:
+**Dependency/build finding — checked twice, second check is the accurate
+one.** `ctdam` (and `seabirdscientific`) require **Python ≥3.12**. A
+web search first suggested the Dockerfile's base image
+(`gnuoctave/octave:9.2.0`) was Ubuntu 22.04 (stock Python 3.10), which
+would have needed a real workaround (a second Python install via a PPA,
+isolated behind a subprocess boundary, to avoid forcing the whole webapp
+onto a non-default Python). **Actually running the real image
+(`docker run gnuoctave/octave:9.2.0 cat /etc/os-release; python3
+--version`) during planning showed that guess was wrong**: the image is
+**Ubuntu 24.04**, whose stock `apt-get install python3` is already
+**3.12.3**. No workaround needed — `ctdam` is a plain
+`webapp/requirements.txt` addition, direct `import ctdam` in the new
+module, nothing else about the Dockerfile changes. Recorded here so a
+future session doesn't have to re-derive it, and as a reminder that a
+web search about a Docker base image's OS is worth confirming against
+the real image before designing around it — the second check took under
+a minute and completely changed the answer.
 
-- Move the *entire* webapp to Python 3.12. Simpler Dockerfile, but it
-  means every contributor needs 3.12 to run `python -m uvicorn
-  webapp.main:app` locally at all (this repo's own documented dev-loop
-  verification method, per `HANDOVER.md`) — real friction imposed on the
-  whole project by one clearly-labeled fallback feature.
-- **Adopted:** isolate the Python-3.12 requirement to *just* the
-  conversion call, via a subprocess boundary. The core webapp
-  (`webapp/requirements.txt`, unchanged) keeps running under whatever
-  Python it already does. `ctdam` goes in a new,
-  separate `webapp/requirements-quickconvert.txt`, installed into its
-  own venv built from a `deadsnakes`-PPA Python 3.12 (Ubuntu 22.04's
-  standard route to a newer Python) — see the plan for the exact
-  Dockerfile changes.
-
-**New modules:**
-- `webapp/quick_convert_worker.py` — a small standalone script, run
-  *only* inside the Python-3.12 venv via subprocess, never imported by
-  the main app. Takes `hex_path`, `xmlcon_path`, `output_path` as CLI
-  args; calls `ctdam.conv.decode_hex(hex_path, xmlcon_path)` →
-  `CTDData.to_cnv(output_path)`; exits 0 on success, non-zero with a
-  message on stderr otherwise. Verified against `ctdam`'s actual source
-  (not just its PyPI listing): `decode_hex()`'s own docstring confirms
-  it (1) reads raw `.hex`, (2) converts using calibration info from the
-  `.xmlcon`, (3) fixes the time array, (4) determines cast start/end,
-  (5) adds Location/Flag columns — real conversion, not a stub. A
-  genuine `.cnv` file needs no special handling to preview:
-  `delimited_parser.sniff_and_preview` already treats any line whose
-  tokens aren't all-numeric as a header line, which is exactly how
-  `.cnv`'s `#`/`*`-prefixed header and `*END*` marker read — so the
-  existing CTD preview/column-mapping UI works on the result completely
-  unchanged.
-- `webapp/quick_convert.py` — runs in the main (3.10) process. Resolves
-  the requested `hex_path`/`xmlcon_path` within the `ctd` mount (reusing
-  `paths.resolve_within`), picks the output path under
-  `data/quick_convert/`, invokes the worker script via `subprocess.run`
-  against the dedicated venv's `python3.12` binary, and turns a non-zero
-  exit into a clear error. This module's own logic (path resolution,
-  output naming, subprocess invocation and error handling) is fully
-  unit-testable on plain Python 3.10 by mocking `subprocess.run` — no
-  Python 3.12 needed for most of this feature's own test coverage; only
-  a true end-to-end pass (real `ctdam` conversion of a real `.hex` file)
-  needs the actual 3.12 environment, and that's verified inside a real
-  `docker build`/`docker run`, matching how this repo already verifies
-  Octave-side changes.
+**New module:** `webapp/quick_convert.py` — wraps
+`ctdam.conv.decode_hex()` (hex+XMLCON → calibrated `CTDData`) and
+`CTDData.to_cnv()` (writes a real Sea-Bird-style `.cnv` file). Verified
+against `ctdam`'s actual source (not just its PyPI listing):
+`decode_hex()`'s own docstring confirms it (1) reads raw `.hex`, (2)
+converts using calibration info from the `.xmlcon`, (3) fixes the time
+array, (4) determines cast start/end, (5) adds Location/Flag columns —
+real conversion, not a stub. A genuine `.cnv` file needs no special
+handling to preview: `delimited_parser.sniff_and_preview` already treats
+any line whose tokens aren't all-numeric as a header line, which is
+exactly how `.cnv`'s `#`/`*`-prefixed header and `*END*` marker read —
+so the existing CTD preview/column-mapping UI works on the result
+completely unchanged, no format-compatibility shim needed.
 
 **New endpoint:** `POST /api/quick-convert/ctd` — body: `{hex_path,
 xmlcon_path}` (both `ctd`-mount-relative, resolved via the existing
@@ -193,10 +173,8 @@ Preview/map-columns works on the result without any changes to that code.
   Sea-Bird-equivalent, and its output should never be treated as
   publication-grade without independent verification.
 
-**Licensing:** `ctdam` (GPLv3) added to the new
-`webapp/requirements-quickconvert.txt` (not the main
-`webapp/requirements.txt` — see the subprocess-isolation note above),
-which transitively pulls in `seabirdscientific` (MIT, Sea-Bird Scientific's own
+**Licensing:** `ctdam` (GPLv3) added to `webapp/requirements.txt`, which
+transitively pulls in `seabirdscientific` (MIT, Sea-Bird Scientific's own
 official toolkit — see the correction above). `NOTICE.md` gets a new
 section alongside the existing `ldeo_ix`/`stubs` disclosure, documenting
 both dependencies and linking their source (PyPI/GitHub) —
@@ -207,15 +185,15 @@ vendor software of unclear status.
 
 ## Testing
 
-- `webapp/quick_convert.py`'s own logic (path resolution, output naming,
-  subprocess invocation and error handling) gets unit tests following
-  the existing pattern (`webapp/tests/`, `pytest`), with `subprocess.run`
-  mocked — runs on plain Python 3.10, no network/Docker/3.12 required.
-- `webapp/quick_convert_worker.py`'s real conversion is verified inside
-  an actual `docker build`/`docker run` pass against a real `.hex`+
-  `.XMLCON` pair from `test_data/` — this is the only part of the
-  feature that genuinely needs Python 3.12, so it's verified where that
-  environment actually exists rather than assumed to work.
+- `webapp/quick_convert.py`'s logic gets unit tests following the
+  existing pattern (`webapp/tests/`, `pytest`), using a real `.hex`+
+  `.XMLCON` pair from `test_data/` as fixture input. This needs a real
+  Python ≥3.12 with `ctdam` installed — the Docker image already has
+  that, so `docker build`/`docker run pytest` is the reliable way to run
+  these; running them on a host whose default Python is older (as with
+  this dev machine, confirmed Python 3.10) needs its own 3.12
+  environment set up separately, same as any other 3.12-only dependency
+  would.
 - UI wiring verified manually (Playwright against a running server), same
   pattern used for the file-browser work: exercise the button against a
   real `test_data/` cruise, confirm the warning banner and filename
