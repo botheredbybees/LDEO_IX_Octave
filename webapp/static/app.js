@@ -264,6 +264,7 @@ function populateFieldMapSelect(inputName, columnNames, suggestedIndex) {
     select.value = "";
     manual.value = "";
     container.dataset.autoSuggested = "false";
+    updateSaveStateFromForm();
   }
 
   setFieldMapMode(inputName, "select");
