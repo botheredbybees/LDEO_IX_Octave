@@ -61,6 +61,14 @@ clone a previous cast (in this session, or from a prior processed cast's
 output `.nc`) as a starting point. Generating writes `/data/set_cast_params.m`
 (backing up any existing file first).
 
+**CTD input must already be converted.** The form's CTD field expects an
+already-converted, decimated ASCII/`.cnv` time series (the standard
+output of Sea-Bird's own SBE Data Processing software) — not a raw
+`.hex` file. If your voyage's CTD data was never run through that
+conversion step, see "Quick-convert" below for a fallback; for anyone
+who does have Sea-Bird's software, that's still the right way to get a
+science-grade converted file.
+
 **No authentication:** the web form has no login and anyone who can reach
 the port can browse the mounted directories and overwrite
 `set_cast_params.m`. It's built for a single trusted operator — only
