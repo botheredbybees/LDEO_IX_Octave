@@ -29,3 +29,18 @@ and is licensed under the MIT License — see `LICENSE`.
 `stubs/` contains small, original no-op replacement functions written for
 this project to allow headless execution (see `CHANGES.md`); they are
 licensed under the same MIT terms.
+
+## Quick-convert dependencies
+
+The webapp's "Quick-convert (unvalidated)" CTD fallback (see
+`webapp/quick_convert.py`) uses two third-party Python packages, both
+with clear, permissive-enough licenses (unlike `ldeo_ix/` above, neither
+is a redistribution-status question):
+
+- [`ctdam`](https://github.com/DAM-CTD-Software/ctdam) — GPLv3. Used as
+  a normal Python dependency (installed via pip, not modified or
+  vendored), not redistributed as part of this project's own source.
+- [`seabirdscientific`](https://github.com/Sea-BirdScientific/seabirdscientific) —
+  MIT. Sea-Bird Scientific's own official community toolkit; `ctdam`
+  depends on it for the actual hex-decoding/calibration math. Pulled in
+  transitively via `ctdam`, not a direct dependency of this repo.
