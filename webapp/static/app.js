@@ -9,6 +9,27 @@ async function api(path, options) {
   return response.status === 204 ? null : response.json();
 }
 
+function openModal(titleText, buildContent) {
+  document.getElementById("modal-title").textContent = titleText;
+  const body = document.getElementById("modal-body");
+  body.innerHTML = "";
+  buildContent(body);
+  document.getElementById("modal-overlay").hidden = false;
+}
+
+function closeModal() {
+  document.getElementById("modal-overlay").hidden = true;
+  document.getElementById("modal-body").innerHTML = "";
+}
+
+document.getElementById("modal-close").addEventListener("click", closeModal);
+document.getElementById("modal-overlay").addEventListener("click", (event) => {
+  if (event.target.id === "modal-overlay") closeModal();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !document.getElementById("modal-overlay").hidden) closeModal();
+});
+
 function serializeCastForm() {
   const form = document.getElementById("cast-form");
   const values = {};
@@ -140,37 +161,38 @@ document.getElementById("apply-ladcp-suggestion").addEventListener("click", () =
   updateSaveStateFromForm();
 });
 
-async function renderPreview(mount, pathInputId, targetDivId, roleFields, fieldPrefix) {
+async function renderPreview(mount, pathInputId, modalTitle, roleFields, fieldPrefix) {
   const path = document.getElementById(pathInputId).value;
   if (!path) return;
   const preview = await api(`/api/preview/${mount}?path=${encodeURIComponent(path)}`);
-  const div = document.getElementById(targetDivId);
   const form = document.getElementById("cast-form");
   form.elements.namedItem(`${fieldPrefix}_header_lines`).value = preview.header_lines;
   form.elements.namedItem(`${fieldPrefix}_fields_per_line`).value = preview.fields_per_line;
 
-  const table = document.createElement("table");
-  const headerRow = document.createElement("tr");
   const columnNames = preview.column_names;
-  for (let col = 0; col < preview.fields_per_line; col++) {
-    const th = document.createElement("th");
-    th.textContent = columnNames ? columnNames[col] : `col ${col + 1}`;
-    headerRow.appendChild(th);
-  }
-  table.appendChild(headerRow);
 
-  for (const row of preview.preview_rows) {
-    const tr = document.createElement("tr");
-    for (const v of row) {
-      const td = document.createElement("td");
-      td.textContent = v;
-      tr.appendChild(td);
+  openModal(modalTitle, (body) => {
+    const table = document.createElement("table");
+    const headerRow = document.createElement("tr");
+    for (let col = 0; col < preview.fields_per_line; col++) {
+      const th = document.createElement("th");
+      th.textContent = columnNames ? columnNames[col] : `col ${col + 1}`;
+      headerRow.appendChild(th);
     }
-    table.appendChild(tr);
-  }
+    table.appendChild(headerRow);
 
-  div.innerHTML = "";
-  div.appendChild(table);
+    for (const row of preview.preview_rows) {
+      const tr = document.createElement("tr");
+      for (const v of row) {
+        const td = document.createElement("td");
+        td.textContent = v;
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+
+    body.appendChild(table);
+  });
 
   for (const role of roleFields) {
     const inputName = `${fieldPrefix}_${role}_field`;
@@ -288,15 +310,14 @@ document.querySelectorAll(".field-map-manual").forEach((manual) => {
   });
 });
 
-async function renderBrowserPanel(panelId, mount, targetInputId, relativePath) {
-  const panel = document.getElementById(panelId);
-  panel.dataset.currentPath = relativePath;
-  panel.innerHTML = "";
+async function renderBrowserPanel(container, mount, targetInputId, relativePath) {
+  container.dataset.currentPath = relativePath;
+  container.innerHTML = "";
 
   const pathLine = document.createElement("div");
   pathLine.className = "browser-path";
   pathLine.textContent = `${mount}:/${relativePath}`;
-  panel.appendChild(pathLine);
+  container.appendChild(pathLine);
 
   let data;
   try {
@@ -305,7 +326,7 @@ async function renderBrowserPanel(panelId, mount, targetInputId, relativePath) {
     const err = document.createElement("div");
     err.className = "browser-error";
     err.textContent = (e.body && e.body.detail) || `could not browse ${mount}`;
-    panel.appendChild(err);
+    container.appendChild(err);
     return;
   }
 
@@ -315,9 +336,9 @@ async function renderBrowserPanel(panelId, mount, targetInputId, relativePath) {
     up.textContent = ".. (up)";
     up.addEventListener("click", () => {
       const parent = relativePath.split("/").slice(0, -1).join("/");
-      renderBrowserPanel(panelId, mount, targetInputId, parent);
+      renderBrowserPanel(container, mount, targetInputId, parent);
     });
-    panel.appendChild(up);
+    container.appendChild(up);
   }
 
   for (const entry of data.entries) {
@@ -326,37 +347,33 @@ async function renderBrowserPanel(panelId, mount, targetInputId, relativePath) {
     row.textContent = entry.is_dir ? `${entry.name}/` : entry.name;
     row.addEventListener("click", () => {
       if (entry.is_dir) {
-        renderBrowserPanel(panelId, mount, targetInputId, entry.relative_path);
+        renderBrowserPanel(container, mount, targetInputId, entry.relative_path);
       } else {
         document.getElementById(targetInputId).value = entry.relative_path;
         if (targetInputId === "ctd-path") updateQuickConvertWarning();
         updateSaveStateFromForm();
-        panel.hidden = true;
+        closeModal();
       }
     });
-    panel.appendChild(row);
+    container.appendChild(row);
   }
 }
 
-function initBrowser(buttonId, mount, targetInputId, panelId) {
+function initBrowser(buttonId, mount, targetInputId) {
   document.getElementById(buttonId).addEventListener("click", () => {
-    const panel = document.getElementById(panelId);
-    if (!panel.hidden) {
-      panel.hidden = true;
-      return;
-    }
-    panel.hidden = false;
-    renderBrowserPanel(panelId, mount, targetInputId, panel.dataset.currentPath || "");
+    openModal(`Browse ${mount}`, (body) => {
+      renderBrowserPanel(body, mount, targetInputId, "");
+    });
   });
 }
 
-initBrowser("browse-ctd", "ctd", "ctd-path", "ctd-browser");
-initBrowser("browse-nav", "nav", "nav-path", "nav-browser");
-initBrowser("browse-ladcpdo", "ladcp", "ladcpdo-path", "ladcpdo-browser");
-initBrowser("browse-ladcpup", "ladcp", "ladcpup-path", "ladcpup-browser");
+initBrowser("browse-ctd", "ctd", "ctd-path");
+initBrowser("browse-nav", "nav", "nav-path");
+initBrowser("browse-ladcpdo", "ladcp", "ladcpdo-path");
+initBrowser("browse-ladcpup", "ladcp", "ladcpup-path");
 
-initBrowser("browse-quickconvert-hex", "ctd", "quickconvert-hex-path", "quickconvert-hex-browser");
-initBrowser("browse-quickconvert-xmlcon", "ctd", "quickconvert-xmlcon-path", "quickconvert-xmlcon-browser");
+initBrowser("browse-quickconvert-hex", "ctd", "quickconvert-hex-path");
+initBrowser("browse-quickconvert-xmlcon", "ctd", "quickconvert-xmlcon-path");
 
 const QUICKCONVERT_SUFFIX = ".UNVALIDATED_QUICKCONVERT.cnv";
 
@@ -397,10 +414,10 @@ document.getElementById("run-quickconvert").addEventListener("click", async () =
 document.getElementById("preview-ctd").addEventListener("click", () => {
   const ctdPath = document.getElementById("ctd-path").value;
   const mount = ctdPath.endsWith(QUICKCONVERT_SUFFIX) ? "data" : "ctd";
-  renderPreview(mount, "ctd-path", "ctd-preview", ["time", "pressure", "temperature", "salinity"], "ctd");
+  renderPreview(mount, "ctd-path", "CTD column preview", ["time", "pressure", "temperature", "salinity"], "ctd");
 });
 document.getElementById("preview-nav").addEventListener("click", () => {
-  renderPreview("nav", "nav-path", "nav-preview", ["time", "lat", "lon"], "nav");
+  renderPreview("nav", "nav-path", "Nav column preview", ["time", "lat", "lon"], "nav");
 });
 
 document.getElementById("add-cast").addEventListener("click", async () => {
