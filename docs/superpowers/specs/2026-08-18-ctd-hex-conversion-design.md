@@ -63,20 +63,81 @@ Additionally, a **"Quick-convert (unvalidated)"** feature is added for
 voyages with no CTD processing at all, using
 [`ctdam`](https://github.com/DAM-CTD-Software/ctdam) (PyPI, GPLv3, actively
 maintained — 31 releases through 1.13.2) to parse raw `.hex`+`.XMLCON`
-directly and produce a file the intake form's existing preview/column-
-mapping flow can consume. `ctdam` has its own from-scratch conversion
-logic (it can also drive real SBE modules if installed, but that path is
-irrelevant here — by definition this feature exists for when Sea-Bird's
-software isn't available). No published validation data was found showing
-its engineering-units math matches Sea-Bird's official output exactly;
-this fact is surfaced to the user, not hidden.
+directly and produce a real Sea-Bird-style `.cnv` file the intake form's
+existing preview/column-mapping flow can consume unchanged (`ctdam`'s
+`decode_hex()` → `CTDData.to_cnv()`).
+
+**Correction after reading `ctdam`'s actual source (not just its PyPI
+listing) during planning:** `ctdam`'s conversion math is not a from-scratch
+reimplementation — `decode_hex()` is built on
+[`seabirdscientific`](https://github.com/Sea-BirdScientific/seabirdscientific)
+(pinned `==2.7.8`), which is **Sea-Bird Scientific's own official,
+MIT-licensed community toolkit**, published under their own GitHub
+organization, documenting the same processing options available in their
+current desktop application ("Fathom"). This is materially better
+provenance than "an independent guess at the calibration math" — it's
+Sea-Bird's own published conversion code, just not their flagship
+production GUI tool, and not independently re-verified by us. The
+"unvalidated, emergency use only" framing and all labeling requirements
+below are unchanged — this still isn't the same as running actual SBE
+Data Processing, and we still haven't independently confirmed byte-for-
+byte agreement with it — but the risk is lower than the original framing
+implied, and it's worth being accurate about that rather than
+overstating the risk in the other direction.
 
 ## Architecture
 
-**New module:** `webapp/quick_convert.py` — wraps `ctdam`'s hex/XMLCON
-parsing and engineering-units conversion, writes output as a plain
-delimited file compatible with `delimited_parser.sniff_and_preview` (so
-the existing CTD preview/column-mapping UI works on the result unchanged).
+**Dependency/build finding that reshaped this section during planning,
+not anticipated in the options analysis above:** `ctdam` (and
+`seabirdscientific`) require **Python ≥3.12**. The Dockerfile's base
+image (`gnuoctave/octave:9.2.0`) is Ubuntu 22.04, whose stock
+`apt-get install python3` is 3.10 — what the existing webapp (and this
+dev machine) already runs. Two ways to handle that:
+
+- Move the *entire* webapp to Python 3.12. Simpler Dockerfile, but it
+  means every contributor needs 3.12 to run `python -m uvicorn
+  webapp.main:app` locally at all (this repo's own documented dev-loop
+  verification method, per `HANDOVER.md`) — real friction imposed on the
+  whole project by one clearly-labeled fallback feature.
+- **Adopted:** isolate the Python-3.12 requirement to *just* the
+  conversion call, via a subprocess boundary. The core webapp
+  (`webapp/requirements.txt`, unchanged) keeps running under whatever
+  Python it already does. `ctdam` goes in a new,
+  separate `webapp/requirements-quickconvert.txt`, installed into its
+  own venv built from a `deadsnakes`-PPA Python 3.12 (Ubuntu 22.04's
+  standard route to a newer Python) — see the plan for the exact
+  Dockerfile changes.
+
+**New modules:**
+- `webapp/quick_convert_worker.py` — a small standalone script, run
+  *only* inside the Python-3.12 venv via subprocess, never imported by
+  the main app. Takes `hex_path`, `xmlcon_path`, `output_path` as CLI
+  args; calls `ctdam.conv.decode_hex(hex_path, xmlcon_path)` →
+  `CTDData.to_cnv(output_path)`; exits 0 on success, non-zero with a
+  message on stderr otherwise. Verified against `ctdam`'s actual source
+  (not just its PyPI listing): `decode_hex()`'s own docstring confirms
+  it (1) reads raw `.hex`, (2) converts using calibration info from the
+  `.xmlcon`, (3) fixes the time array, (4) determines cast start/end,
+  (5) adds Location/Flag columns — real conversion, not a stub. A
+  genuine `.cnv` file needs no special handling to preview:
+  `delimited_parser.sniff_and_preview` already treats any line whose
+  tokens aren't all-numeric as a header line, which is exactly how
+  `.cnv`'s `#`/`*`-prefixed header and `*END*` marker read — so the
+  existing CTD preview/column-mapping UI works on the result completely
+  unchanged.
+- `webapp/quick_convert.py` — runs in the main (3.10) process. Resolves
+  the requested `hex_path`/`xmlcon_path` within the `ctd` mount (reusing
+  `paths.resolve_within`), picks the output path under
+  `data/quick_convert/`, invokes the worker script via `subprocess.run`
+  against the dedicated venv's `python3.12` binary, and turns a non-zero
+  exit into a clear error. This module's own logic (path resolution,
+  output naming, subprocess invocation and error handling) is fully
+  unit-testable on plain Python 3.10 by mocking `subprocess.run` — no
+  Python 3.12 needed for most of this feature's own test coverage; only
+  a true end-to-end pass (real `ctdam` conversion of a real `.hex` file)
+  needs the actual 3.12 environment, and that's verified inside a real
+  `docker build`/`docker run`, matching how this repo already verifies
+  Octave-side changes.
 
 **New endpoint:** `POST /api/quick-convert/ctd` — body: `{hex_path,
 xmlcon_path}` (both `ctd`-mount-relative, resolved via the existing
@@ -88,21 +149,27 @@ is the one mount the README guarantees is writable; `ctd`/`nav`/`ladcp`/
 `sadcp` may well be read-only bind mounts of raw ship data in practice,
 and writing a converted file back into someone's raw-data directory would
 be a bad default even where it happens to be writable. Output path:
-`data/quick_convert/<hex-stem>.UNVALIDATED_QUICKCONVERT.txt`. Returns the
-resulting path (exact addressing scheme — see the open detail
-immediately below), or a structured error if `ctdam` can't parse the
-input.
+`data/quick_convert/<hex-stem>.UNVALIDATED_QUICKCONVERT.cnv` (`.cnv`, not
+`.txt` as originally drafted — it's a genuine `.cnv` file, the extension
+should say so). Returns `{"ctd_path": "quick_convert/<name>"}`.
 
-*Open detail for the implementation plan, not resolved here:* the CTD
-fieldset's `ctd-path` input is `ctd`-mount-relative (it's fed into
-`/api/preview/ctd?path=...`), but quick-convert's output lives under
-`data`. Either (a) the preview/generate pipeline needs to accept a
-mount-qualified path for this one case, or (b) simpler: write the output
-under `data/quick_convert/` *and* have the generate step read it from
-there directly when a session's CTD field is flagged as quick-converted,
-bypassing the `ctd`-mount assumption entirely. Pick whichever is less
-invasive once inside the code — flagging now so it isn't a surprise
-during implementation.
+**Resolved (was an open detail above):** the CTD fieldset's `ctd-path`
+input is normally `ctd`-mount-relative, but quick-convert's output lives
+under `data`. Rather than add a session-level "is this quick-converted"
+flag, the fixed filename suffix already required for labeling purposes
+(below) doubles as the routing signal: the frontend's Preview click
+handler checks whether the current `ctd-path` value ends in
+`.UNVALIDATED_QUICKCONVERT.cnv` and calls `/api/preview/data?path=...`
+instead of `/api/preview/ctd?path=...` when it does — no backend change
+needed, `/api/preview/{mount}` is already mount-generic. The same suffix
+check drives the warning banner and a small fix to
+`validation.py`'s existing per-field mount-existence check (today it
+always checks the `ctd` field against the `ctd` mount; a quick-converted
+value needs checking against `data` instead, or it'll produce a
+spurious "not found under ctd mount" warning for a file that
+genuinely exists). `f.ctd` in the generated `set_cast_params.m` is
+written exactly like any other value in that field today — verbatim,
+with no mount translation — so this introduces no new behavior there.
 
 **New UI:** a "Quick-convert raw hex (unvalidated, emergency use only)"
 button in the CTD fieldset, next to the existing Browse/Preview controls.
@@ -117,7 +184,7 @@ Preview/map-columns works on the result without any changes to that code.
 - A persistent warning banner appears in the CTD fieldset whenever a
   quick-converted file is in use (detectable by the filename suffix).
 - Generated output filenames get a fixed suffix,
-  `<original-hex-stem>.UNVALIDATED_QUICKCONVERT.txt`, so the provenance is
+  `<original-hex-stem>.UNVALIDATED_QUICKCONVERT.cnv`, so the provenance is
   visible in the filesystem itself, not just the UI — a file that
   outlives this browser session (gets committed to a cruise's data
   directory, gets emailed to someone) still carries the warning.
@@ -126,19 +193,29 @@ Preview/map-columns works on the result without any changes to that code.
   Sea-Bird-equivalent, and its output should never be treated as
   publication-grade without independent verification.
 
-**Licensing:** `ctdam` (GPLv3) added to `webapp/requirements.txt`.
-`NOTICE.md` gets a new section alongside the existing `ldeo_ix`/`stubs`
-disclosure, documenting the GPLv3 dependency and linking its source
-(PyPI/GitHub) — straightforward disclosure, not the same class of open
-question as Option A's Sea-Bird EULA gap, since this is a normal
-third-party Python dependency, not redistributed vendor software.
+**Licensing:** `ctdam` (GPLv3) added to the new
+`webapp/requirements-quickconvert.txt` (not the main
+`webapp/requirements.txt` — see the subprocess-isolation note above),
+which transitively pulls in `seabirdscientific` (MIT, Sea-Bird Scientific's own
+official toolkit — see the correction above). `NOTICE.md` gets a new
+section alongside the existing `ldeo_ix`/`stubs` disclosure, documenting
+both dependencies and linking their source (PyPI/GitHub) —
+straightforward disclosure either way, not the same class of open
+question as Option A's Sea-Bird EULA gap, since these are normal
+third-party Python dependencies with clear licenses, not redistributed
+vendor software of unclear status.
 
 ## Testing
 
-- `webapp/quick_convert.py`'s pure logic (parsing, output formatting)
-  gets unit tests following the existing pattern (`webapp/tests/`,
-  `pytest`), using a real `.hex`+`.XMLCON` pair from `test_data/` as
-  fixture input — no network/Docker required for these.
+- `webapp/quick_convert.py`'s own logic (path resolution, output naming,
+  subprocess invocation and error handling) gets unit tests following
+  the existing pattern (`webapp/tests/`, `pytest`), with `subprocess.run`
+  mocked — runs on plain Python 3.10, no network/Docker/3.12 required.
+- `webapp/quick_convert_worker.py`'s real conversion is verified inside
+  an actual `docker build`/`docker run` pass against a real `.hex`+
+  `.XMLCON` pair from `test_data/` — this is the only part of the
+  feature that genuinely needs Python 3.12, so it's verified where that
+  environment actually exists rather than assumed to work.
 - UI wiring verified manually (Playwright against a running server), same
   pattern used for the file-browser work: exercise the button against a
   real `test_data/` cruise, confirm the warning banner and filename
