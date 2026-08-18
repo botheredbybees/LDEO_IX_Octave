@@ -193,6 +193,7 @@ async function renderBrowserPanel(panelId, mount, targetInputId, relativePath) {
         renderBrowserPanel(panelId, mount, targetInputId, entry.relative_path);
       } else {
         document.getElementById(targetInputId).value = entry.relative_path;
+        if (targetInputId === "ctd-path") updateQuickConvertWarning();
         panel.hidden = true;
       }
     });
@@ -217,8 +218,47 @@ initBrowser("browse-nav", "nav", "nav-path", "nav-browser");
 initBrowser("browse-ladcpdo", "ladcp", "ladcpdo-path", "ladcpdo-browser");
 initBrowser("browse-ladcpup", "ladcp", "ladcpup-path", "ladcpup-browser");
 
+initBrowser("browse-quickconvert-hex", "ctd", "quickconvert-hex-path", "quickconvert-hex-browser");
+initBrowser("browse-quickconvert-xmlcon", "ctd", "quickconvert-xmlcon-path", "quickconvert-xmlcon-browser");
+
+const QUICKCONVERT_SUFFIX = ".UNVALIDATED_QUICKCONVERT.cnv";
+
+function updateQuickConvertWarning() {
+  const value = document.getElementById("ctd-path").value;
+  document.getElementById("ctd-quickconvert-warning").hidden = !value.endsWith(QUICKCONVERT_SUFFIX);
+}
+
+document.getElementById("ctd-path").addEventListener("input", updateQuickConvertWarning);
+
+document.getElementById("run-quickconvert").addEventListener("click", async () => {
+  const hexPath = document.getElementById("quickconvert-hex-path").value;
+  const xmlconPath = document.getElementById("quickconvert-xmlcon-path").value;
+  const result = document.getElementById("quickconvert-result");
+  if (!hexPath || !xmlconPath) {
+    result.textContent = "Pick both a .hex file and its .XMLCON file first.";
+    result.className = "error";
+    return;
+  }
+  try {
+    const body = await api("/api/quick-convert/ctd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hex_path: hexPath, xmlcon_path: xmlconPath }),
+    });
+    document.getElementById("ctd-path").value = body.ctd_path;
+    updateQuickConvertWarning();
+    result.textContent = `Converted. CTD file set to ${body.ctd_path} — remember, this is unvalidated.`;
+    result.className = "warning";
+  } catch (e) {
+    result.textContent = (e.body && e.body.detail) || "Quick-convert failed.";
+    result.className = "error";
+  }
+});
+
 document.getElementById("preview-ctd").addEventListener("click", () => {
-  renderPreview("ctd", "ctd-path", "ctd-preview", ["time", "pressure", "temperature", "salinity"]);
+  const ctdPath = document.getElementById("ctd-path").value;
+  const mount = ctdPath.endsWith(QUICKCONVERT_SUFFIX) ? "data" : "ctd";
+  renderPreview(mount, "ctd-path", "ctd-preview", ["time", "pressure", "temperature", "salinity"]);
 });
 document.getElementById("preview-nav").addEventListener("click", () => {
   renderPreview("nav", "nav-path", "nav-preview", ["time", "lat", "lon"]);
