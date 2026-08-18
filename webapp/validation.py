@@ -52,18 +52,20 @@ def validate_session(session: CruiseSession) -> ValidationResult:
                 continue
             if field_name == "ctd" and relative.endswith(quick_convert.QUICKCONVERT_SUFFIX):
                 mount_root = config.MOUNTS.get("data")
+                checked_mount_name = "data"
             else:
                 mount_root = config.MOUNTS.get(mount_name)
+                checked_mount_name = mount_name
             if mount_root is None:
-                cast_warnings.append(f"{relative} not found under {mount_name} mount")
+                cast_warnings.append(f"{relative} not found under {checked_mount_name} mount")
                 continue
             try:
                 resolved = paths.resolve_within(mount_root, relative)
             except paths.PathOutsideMountError:
-                cast_warnings.append(f"{relative} not found under {mount_name} mount")
+                cast_warnings.append(f"{relative} not found under {checked_mount_name} mount")
                 continue
             if not resolved.is_file():
-                cast_warnings.append(f"{relative} not found under {mount_name} mount")
+                cast_warnings.append(f"{relative} not found under {checked_mount_name} mount")
         if cast_warnings:
             result.warnings[cast.id] = cast_warnings
 

@@ -106,3 +106,25 @@ def test_quick_converted_ctd_checked_against_data_mount_not_ctd_mount(tmp_path, 
     result = validation.validate_session(session)
 
     assert result.warnings == {}
+
+
+def test_missing_quick_converted_ctd_warns_about_data_mount_not_ctd_mount(tmp_path, monkeypatch):
+    data_mount = tmp_path / "data"
+    ctd_mount = tmp_path / "ctd"
+    ladcp_mount = tmp_path / "ladcp"
+    data_mount.mkdir()
+    ctd_mount.mkdir()
+    ladcp_mount.mkdir()
+    (ladcp_mount / "003DL000.000").write_text("")
+    (ladcp_mount / "003UL000.000").write_text("")
+    monkeypatch.setitem(config.MOUNTS, "data", data_mount)
+    monkeypatch.setitem(config.MOUNTS, "ctd", ctd_mount)
+    monkeypatch.setitem(config.MOUNTS, "ladcp", ladcp_mount)
+
+    cast = _valid_cast(ctd="quick_convert/cast.UNVALIDATED_QUICKCONVERT.cnv")
+    session = CruiseSession(casts=[cast])
+
+    result = validation.validate_session(session)
+
+    assert result.is_valid is True
+    assert "quick_convert/cast.UNVALIDATED_QUICKCONVERT.cnv not found under data mount" in result.warnings[cast.id]
