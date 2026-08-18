@@ -177,6 +177,7 @@ async function renderPreview(mount, pathInputId, modalTitle, roleFields, fieldPr
   const form = document.getElementById("cast-form");
   form.elements.namedItem(`${fieldPrefix}_header_lines`).value = preview.header_lines;
   form.elements.namedItem(`${fieldPrefix}_fields_per_line`).value = preview.fields_per_line;
+  updateSaveStateFromForm();
 
   const columnNames = preview.column_names;
 
@@ -412,6 +413,7 @@ document.getElementById("run-quickconvert").addEventListener("click", async () =
     });
     document.getElementById("ctd-path").value = body.ctd_path;
     updateQuickConvertWarning();
+    updateSaveStateFromForm();
     result.textContent = `Converted. CTD file set to ${body.ctd_path} — remember, this is unvalidated.`;
     result.className = "warning";
   } catch (e) {
