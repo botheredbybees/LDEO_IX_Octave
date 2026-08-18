@@ -137,6 +137,7 @@ document.getElementById("apply-ladcp-suggestion").addEventListener("click", () =
   form.elements.namedItem("ladcpdo").value = chosen.down || "";
   form.elements.namedItem("ladcpup").value = chosen.up || "";
   form.elements.namedItem("cast_name").value = chosen.station;
+  updateSaveStateFromForm();
 });
 
 async function renderPreview(mount, pathInputId, targetDivId, roleFields, fieldPrefix) {
@@ -241,6 +242,7 @@ function populateFieldMapSelect(inputName, columnNames, suggestedIndex) {
   select.onchange = () => {
     manual.value = select.value;
     container.dataset.autoSuggested = "false";
+    updateSaveStateFromForm();
   };
 
   // manual.value being non-empty is not by itself proof of a deliberate
@@ -257,6 +259,7 @@ function populateFieldMapSelect(inputName, columnNames, suggestedIndex) {
     select.value = String(suggestedIndex);
     manual.value = String(suggestedIndex);
     container.dataset.autoSuggested = "true";
+    updateSaveStateFromForm();
   } else {
     select.value = "";
     manual.value = "";
@@ -326,6 +329,7 @@ async function renderBrowserPanel(panelId, mount, targetInputId, relativePath) {
       } else {
         document.getElementById(targetInputId).value = entry.relative_path;
         if (targetInputId === "ctd-path") updateQuickConvertWarning();
+        updateSaveStateFromForm();
         panel.hidden = true;
       }
     });
