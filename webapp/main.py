@@ -4,8 +4,9 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
-from webapp import api, config, delimited_parser, file_browser, ladcp_scan, paths
+from webapp import api, config, delimited_parser, file_browser, ladcp_scan, paths, quick_convert
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -72,6 +73,34 @@ def preview_file(mount: str, path: str):
         "fields_per_line": preview.fields_per_line,
         "preview_rows": preview.preview_rows,
     }
+
+
+class QuickConvertCtdRequest(BaseModel):
+    hex_path: str
+    xmlcon_path: str
+
+
+@app.post("/api/quick-convert/ctd")
+def quick_convert_ctd(body: QuickConvertCtdRequest):
+    ctd_mount = config.MOUNTS.get("ctd")
+    data_mount = config.MOUNTS.get("data")
+    if ctd_mount is None or not ctd_mount.is_dir():
+        raise HTTPException(status_code=404, detail="ctd mount not available")
+    if data_mount is None or not data_mount.is_dir():
+        raise HTTPException(status_code=404, detail="data mount not available")
+
+    try:
+        resolved_hex = paths.resolve_within(ctd_mount, body.hex_path)
+        resolved_xmlcon = paths.resolve_within(ctd_mount, body.xmlcon_path)
+    except paths.PathOutsideMountError:
+        raise HTTPException(status_code=400, detail="path is outside the allowed directory")
+
+    try:
+        ctd_path = quick_convert.convert(resolved_hex, resolved_xmlcon, data_mount)
+    except quick_convert.QuickConvertError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return {"ctd_path": ctd_path}
 
 
 @app.get("/api/ladcp/scan")

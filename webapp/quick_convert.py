@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from ctdam.conv import decode_hex
-
 QUICKCONVERT_SUFFIX = ".UNVALIDATED_QUICKCONVERT.cnv"
 
 
@@ -10,6 +8,8 @@ class QuickConvertError(Exception):
 
 
 def convert(hex_path: Path, xmlcon_path: Path, data_mount_root: Path) -> str:
+    from ctdam.conv import decode_hex
+
     if not hex_path.is_file():
         raise QuickConvertError(f"{hex_path} not found")
     if not xmlcon_path.is_file():

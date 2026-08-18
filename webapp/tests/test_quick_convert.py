@@ -2,6 +2,11 @@ from pathlib import Path
 
 import pytest
 
+try:
+    import ctdam  # noqa: F401
+except ImportError:
+    pytestmark = pytest.mark.skip(reason="ctdam not installed")
+
 from webapp import quick_convert
 
 FIXTURE_DIR = Path(__file__).resolve().parents[2] / "test_data" / "202324050_nuyina" / "ctd" / "seasave_raw"
