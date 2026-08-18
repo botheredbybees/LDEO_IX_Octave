@@ -69,6 +69,18 @@ conversion step, see "Quick-convert" below for a fallback; for anyone
 who does have Sea-Bird's software, that's still the right way to get a
 science-grade converted file.
 
+### Quick-convert (unvalidated)
+
+For voyages with no CTD processing at all, the CTD fieldset has a
+"Quick-convert raw hex" option that turns a raw `.hex`+`.XMLCON` pair
+into a usable `.cnv` file automatically, using the open-source `ctdam`
+library. **This is not Sea-Bird-equivalent and its output should never
+be treated as publication-grade without independent verification** —
+it exists purely so a cast with no other CTD conversion available isn't
+a hard blocker. Quick-converted files are always named
+`<original>.UNVALIDATED_QUICKCONVERT.cnv` so the provenance travels with
+the file even outside this tool.
+
 **No authentication:** the web form has no login and anyone who can reach
 the port can browse the mounted directories and overwrite
 `set_cast_params.m`. It's built for a single trusted operator — only
