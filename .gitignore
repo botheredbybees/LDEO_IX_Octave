@@ -9,3 +9,5 @@ __pycache__/
 
 test_data/*
 !test_data/sources.md
+
+.superpowers/
