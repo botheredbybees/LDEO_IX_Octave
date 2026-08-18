@@ -69,6 +69,13 @@ conversion step, see "Quick-convert" below for a fallback; for anyone
 who does have Sea-Bird's software, that's still the right way to get a
 science-grade converted file.
 
+**No authentication:** the web form has no login and anyone who can reach
+the port can browse the mounted directories and overwrite
+`set_cast_params.m`. It's built for a single trusted operator — only
+publish `-p 8080:8080` on a network you trust (e.g. bind to `127.0.0.1`
+instead of all interfaces, or don't publish the port at all and use
+`docker exec`/an SSH tunnel).
+
 ### Quick-convert (unvalidated)
 
 For voyages with no CTD processing at all, the CTD fieldset has a
@@ -77,16 +84,11 @@ into a usable `.cnv` file automatically, using the open-source `ctdam`
 library. **This is not Sea-Bird-equivalent and its output should never
 be treated as publication-grade without independent verification** —
 it exists purely so a cast with no other CTD conversion available isn't
-a hard blocker. Quick-converted files are always named
+a hard blocker. Converted files are written under `data/quick_convert/`
+— the `data` mount must be writable for this feature to work, unlike
+the read-only-safe default flow. Quick-converted files are always named
 `<original>.UNVALIDATED_QUICKCONVERT.cnv` so the provenance travels with
 the file even outside this tool.
-
-**No authentication:** the web form has no login and anyone who can reach
-the port can browse the mounted directories and overwrite
-`set_cast_params.m`. It's built for a single trusted operator — only
-publish `-p 8080:8080` on a network you trust (e.g. bind to `127.0.0.1`
-instead of all interfaces, or don't publish the port at all and use
-`docker exec`/an SSH tunnel).
 
 ### Direct Octave CLI
 

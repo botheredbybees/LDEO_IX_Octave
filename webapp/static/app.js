@@ -64,6 +64,7 @@ async function openEditor(castId) {
   }
   if (cast.time_start) form.elements.namedItem("time_start_raw").value = cast.time_start.join(" ");
   if (cast.time_end) form.elements.namedItem("time_end_raw").value = cast.time_end.join(" ");
+  updateQuickConvertWarning();
   document.getElementById("cast-editor").hidden = false;
   await loadLadcpSuggestions();
 }

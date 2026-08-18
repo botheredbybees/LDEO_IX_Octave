@@ -8,8 +8,6 @@ class QuickConvertError(Exception):
 
 
 def convert(hex_path: Path, xmlcon_path: Path, data_mount_root: Path) -> str:
-    from ctdam.conv import decode_hex
-
     if not hex_path.is_file():
         raise QuickConvertError(f"{hex_path} not found")
     if not xmlcon_path.is_file():
@@ -20,6 +18,8 @@ def convert(hex_path: Path, xmlcon_path: Path, data_mount_root: Path) -> str:
     output_path = output_dir / output_name
 
     try:
+        from ctdam.conv import decode_hex
+
         output_dir.mkdir(parents=True, exist_ok=True)
         ctd_data = decode_hex(hex_path, xmlcon_path)
         ctd_data.to_cnv(str(output_path))
