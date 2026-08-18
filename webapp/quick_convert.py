@@ -16,11 +16,11 @@ def convert(hex_path: Path, xmlcon_path: Path, data_mount_root: Path) -> str:
         raise QuickConvertError(f"{xmlcon_path} not found")
 
     output_dir = data_mount_root / "quick_convert"
-    output_dir.mkdir(parents=True, exist_ok=True)
     output_name = f"{hex_path.stem}{QUICKCONVERT_SUFFIX}"
     output_path = output_dir / output_name
 
     try:
+        output_dir.mkdir(parents=True, exist_ok=True)
         ctd_data = decode_hex(hex_path, xmlcon_path)
         ctd_data.to_cnv(str(output_path))
     except Exception as exc:
