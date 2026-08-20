@@ -1,4 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Inter, vendored locally rather than loaded from Google Fonts -- this app
+   ships inside a Docker image that may run with no internet access (e.g.
+   shipboard), and a render-blocking external font request has no graceful
+   "fast" path there, only a slow timeout before falling back to the
+   system-ui default. Single variable-weight file, latin subset only (this
+   form's UI text is English-only) -- covers weights 400-700 in one file. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('fonts/inter-latin-variable.woff2') format('woff2');
+}
 
 :root {
   --color-bg: #12131f;
