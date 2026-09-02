@@ -85,6 +85,48 @@ def test_ignores_comment_marked_header_lines_for_column_names(tmp_path):
     assert preview.fields_per_line == 3
 
 
+def test_extracts_column_names_from_sea_bird_name_lines(tmp_path):
+    f = tmp_path / "quick_convert.cnv"
+    f.write_text(
+        "* Sea-Bird SBE 9 Data File:\n"
+        "* FileName = station01.hex\n"
+        "** Ship: RSV Nuyina\n"
+        "* System UTC = Apr 11 2015 17:36:23\n"
+        "# nquan = 5\n"
+        "# nvalues = 2\n"
+        "# units = specified\n"
+        "# name 0 = prDM: Pressure, Digiquartz [db]\n"
+        "# name 1 = t090C: Temperature [ITS-90, deg C]\n"
+        "# name 2 = c0S/m: Conductivity [S/m]\n"
+        "# name 3 = sal00: Salinity, Practical [PSU]\n"
+        "# name 4 = flag: flag\n"
+        "*END*\n"
+        "     2.000   -9.0000  -9.00000   -9.0000  0.0000e+00\n"
+        "     4.000    0.1258  27.71898   33.1138  0.0000e+00\n"
+    )
+
+    preview = delimited_parser.sniff_and_preview(f)
+
+    assert preview.column_names == ["prDM", "t090C", "c0S/m", "sal00", "flag"]
+    assert preview.fields_per_line == 5
+
+
+def test_ignores_partial_sea_bird_name_lines_falling_short_of_field_count(tmp_path):
+    f = tmp_path / "truncated.cnv"
+    f.write_text(
+        "# name 0 = prDM: Pressure, Digiquartz [db]\n"
+        "# name 1 = t090C: Temperature [ITS-90, deg C]\n"
+        "*END*\n"
+        "     2.000   -9.0000  -9.00000\n"
+        "     4.000    0.1258  27.71898\n"
+    )
+
+    preview = delimited_parser.sniff_and_preview(f)
+
+    assert preview.column_names is None
+    assert preview.fields_per_line == 3
+
+
 def test_column_names_is_none_for_headerless_files(tmp_path):
     f = tmp_path / "003.2Hz"
     f.write_text(

@@ -34,6 +34,19 @@ def test_returns_empty_dict_for_no_column_names():
     assert suggest_roles([]) == {}
 
 
+def test_suggests_roles_from_genuine_sea_bird_shortnames():
+    column_names = ["prDM", "t090C", "c0S/m", "sal00", "flag"]
+
+    suggestions = suggest_roles(column_names)
+
+    assert suggestions == {"pressure": 1, "temperature": 2, "salinity": 4}
+
+
+def test_suggests_temperature_for_secondary_and_ipts68_sea_bird_channels():
+    for shortname in ["t190C", "t068C", "t168C"]:
+        assert suggest_roles([shortname]) == {"temperature": 1}
+
+
 def test_no_suggestion_for_unmatched_roles():
     # CTDCOND matches no tracked role -- conductivity isn't one of the
     # roles this form maps -- and nothing here looks like a date/lat/lon.
