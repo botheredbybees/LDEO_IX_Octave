@@ -1,8 +1,17 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 _FILENAME_RE = re.compile(r"^(?P<station>\d+)(?P<dir>[DU])L\d+\.\d+$", re.IGNORECASE)
+
+
+def station_token_from_filename(filename: str) -> Optional[str]:
+    """Extract the zero-padded station token LDEO_IX's LADCP naming
+    convention embeds in a down/up filename (e.g. "003" from
+    "003DL000.000"), or None if it doesn't match that convention."""
+    match = _FILENAME_RE.match(filename)
+    return match.group("station") if match else None
 
 
 @dataclass

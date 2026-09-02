@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from webapp import config, netcdf_reader, paths, session_store, template_gen, validation
+from webapp import cast_guess, config, netcdf_reader, paths, session_store, template_gen, validation
 from webapp.models import CastEntry
 
 router = APIRouter()
@@ -37,6 +37,10 @@ def create_cast(patch: CastPatch):
     session = session_store.load_session()
     data = patch.model_dump(exclude_unset=True)
     data.pop("id", None)
+
+    if not data and session.casts:
+        data = cast_guess.guess_next_cast(session.casts[-1])
+
     cast = CastEntry(**data)
 
     if not cast.checkpoints_file and cast.cast_name:

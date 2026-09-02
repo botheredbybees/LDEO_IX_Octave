@@ -32,3 +32,12 @@ def test_results_sorted_by_station(tmp_path):
     results = ladcp_scan.scan_ladcp_directory(tmp_path)
 
     assert [r.station for r in results] == ["002", "010"]
+
+
+def test_station_token_from_filename_extracts_zero_padded_station():
+    assert ladcp_scan.station_token_from_filename("003DL000.000") == "003"
+    assert ladcp_scan.station_token_from_filename("010ul000.000") == "010"
+
+
+def test_station_token_from_filename_returns_none_for_non_matching_name():
+    assert ladcp_scan.station_token_from_filename("readme.txt") is None

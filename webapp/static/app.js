@@ -112,6 +112,7 @@ async function openEditor(castId) {
   state.editingCastId = castId || null;
   const form = document.getElementById("cast-form");
   form.reset();
+  document.getElementById("cast-guess-notice").hidden = true;
   document.querySelectorAll(".field-map").forEach((container) => {
     // A value about to be applied below (or left blank) is either a deliberate
     // saved-cast value or nothing at all -- never a fresh auto-suggestion for
@@ -450,6 +451,8 @@ document.getElementById("add-cast").addEventListener("click", async () => {
   });
   await refreshCastList();
   await openEditor(created.id);
+  const wasGuessed = created.ctd || created.nav || created.ladcpdo || created.ladcpup;
+  document.getElementById("cast-guess-notice").hidden = !wasGuessed;
 });
 
 document.getElementById("cast-cards").addEventListener("click", async (event) => {

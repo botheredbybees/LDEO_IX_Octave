@@ -123,6 +123,60 @@ def test_clone_from_netcdf_prefills_known_fields(tmp_path, monkeypatch):
     assert body["lon"] == -150.19699
 
 
+def test_create_cast_guesses_from_previous_cast_when_body_is_empty(tmp_path, monkeypatch):
+    data_mount = tmp_path / "data"
+    ladcp_mount = tmp_path / "ladcp"
+    data_mount.mkdir()
+    ladcp_mount.mkdir()
+    (ladcp_mount / "004DL000.000").write_text("")
+    (ladcp_mount / "004UL000.000").write_text("")
+    monkeypatch.setitem(config.MOUNTS, "data", data_mount)
+    monkeypatch.setitem(config.MOUNTS, "ladcp", ladcp_mount)
+    client = TestClient(main.app)
+    client.post(
+        "/api/session/casts",
+        json={
+            "cast_name": "003",
+            "ladcp_station": 3,
+            "ladcp_cast": 1,
+            "ladcpdo": "003DL000.000",
+            "ladcpup": "003UL000.000",
+        },
+    )
+
+    response = client.post("/api/session/casts", json={})
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["ladcp_station"] == 4
+    assert body["cast_name"] == "004"
+    assert body["ladcpdo"] == "004DL000.000"
+    assert body["ladcpup"] == "004UL000.000"
+
+
+def test_create_cast_does_not_guess_when_client_supplies_any_field(tmp_path, monkeypatch):
+    data_mount = tmp_path / "data"
+    ladcp_mount = tmp_path / "ladcp"
+    data_mount.mkdir()
+    ladcp_mount.mkdir()
+    (ladcp_mount / "004DL000.000").write_text("")
+    monkeypatch.setitem(config.MOUNTS, "data", data_mount)
+    monkeypatch.setitem(config.MOUNTS, "ladcp", ladcp_mount)
+    client = TestClient(main.app)
+    client.post(
+        "/api/session/casts",
+        json={"cast_name": "003", "ladcp_station": 3, "ladcpdo": "003DL000.000"},
+    )
+
+    response = client.post("/api/session/casts", json={"cast_name": "custom"})
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["cast_name"] == "custom"
+    assert body["ladcp_station"] is None
+    assert body["ladcpdo"] == ""
+
+
 def test_create_cast_ignores_client_supplied_id(tmp_path, monkeypatch):
     monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
     client = TestClient(main.app)
