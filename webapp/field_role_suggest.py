@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 
 # Order matters: for a given column, the first pattern in this dict that
 # matches wins that column's role. Case-insensitive substring search
@@ -13,7 +14,7 @@ _ROLE_PATTERNS: dict[str, "re.Pattern[str]"] = {
 }
 
 
-def suggest_roles(column_names: list | None) -> dict:
+def suggest_roles(column_names: Optional[list]) -> dict:
     """Guess which column plays which role, by name pattern.
 
     Returns {role: 1-based column index} for every role a column name

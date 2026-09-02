@@ -237,18 +237,23 @@ function setFieldMapMode(inputName, mode) {
   const select = container.querySelector(".field-map-select");
   const manual = container.querySelector(".field-map-manual");
   const toggle = container.querySelector(".field-map-toggle");
+  const label = container.querySelector("label");
+  if (!select.id) select.id = `${inputName}_select`;
   if (mode === "select" && select.options.length > 1) {
+    select.value = manual.value;
     select.hidden = false;
     manual.hidden = true;
     toggle.textContent = "Enter index manually";
     toggle.disabled = false;
     container.dataset.mode = "select";
+    if (label) label.htmlFor = select.id;
   } else {
     select.hidden = true;
     manual.hidden = false;
     toggle.textContent = "Choose from detected columns";
     toggle.disabled = select.options.length <= 1;
     container.dataset.mode = "manual";
+    if (label) label.htmlFor = manual.id;
   }
 }
 
@@ -287,6 +292,12 @@ function populateFieldMapSelect(inputName, columnNames, suggestedIndex) {
   const hadAutoSuggestedValue = container.dataset.autoSuggested === "true";
   if (manual.value && !hadAutoSuggestedValue) {
     select.value = manual.value;
+    if (select.value !== manual.value) {
+      // The preserved value doesn't match any column in this (newer/
+      // different) file -- don't leave a stale index silently queued for
+      // submission while the UI shows the field as unmapped.
+      manual.value = "";
+    }
   } else if (suggestedIndex != null) {
     select.value = String(suggestedIndex);
     manual.value = String(suggestedIndex);
@@ -463,8 +474,7 @@ document.getElementById("cast-form").addEventListener("submit", async (event) =>
   for (const element of form.elements) {
     if (!element.name || element.name.endsWith("_raw")) continue;
     if (element.value === "") continue;
-    const isNumericSelect = element.tagName === "SELECT" && element.value !== "" && !Number.isNaN(Number(element.value));
-    payload[element.name] = (element.type === "number" || isNumericSelect) ? Number(element.value) : element.value;
+    payload[element.name] = element.type === "number" ? Number(element.value) : element.value;
   }
   const startRaw = form.elements.namedItem("time_start_raw").value;
   const endRaw = form.elements.namedItem("time_end_raw").value;

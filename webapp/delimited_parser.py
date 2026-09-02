@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 
 @dataclass
@@ -7,7 +8,7 @@ class DelimitedPreview:
     header_lines: int
     fields_per_line: int
     preview_rows: list
-    column_names: list | None = None
+    column_names: Optional[list] = None
 
 
 def sniff_and_preview(file_path: Path, max_rows: int = 10) -> DelimitedPreview:
