@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import markdown
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +26,13 @@ def index(request: Request):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/help", response_class=HTMLResponse)
+def help_page(request: Request):
+    source = (BASE_DIR / "docs" / "user-guide.md").read_text(encoding="utf-8")
+    content = markdown.markdown(source, extensions=["fenced_code", "tables", "toc"])
+    return templates.TemplateResponse(request, "help.html", {"content": content})
 
 
 @app.get("/api/mounts")

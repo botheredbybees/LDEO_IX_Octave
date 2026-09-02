@@ -61,6 +61,11 @@ clone a previous cast (in this session, or from a prior processed cast's
 output `.nc`) as a starting point. Generating writes `/data/set_cast_params.m`
 (backing up any existing file first).
 
+A day-to-day **user guide** for the form itself (adding casts, file
+requirements, troubleshooting) lives at
+[`webapp/docs/user-guide.md`](webapp/docs/user-guide.md) and is also
+served in the running app at `http://localhost:8080/help`.
+
 **CTD input must already be converted.** The form's CTD field expects an
 already-converted, decimated ASCII/`.cnv` time series (the standard
 output of Sea-Bird's own SBE Data Processing software) — not a raw

@@ -245,3 +245,16 @@ input:focus, select:focus, textarea:focus {
 
 .modal-body table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
 .modal-body th, .modal-body td { border: 1px solid var(--color-border); padding: var(--space-2) var(--space-3); text-align: left; }
+
+header nav { margin-bottom: var(--space-6); }
+header nav a { font-size: 0.9rem; }
+
+.markdown-body { max-width: 60rem; line-height: 1.6; }
+.markdown-body h1 { font-weight: 600; margin: 0 0 var(--space-6) 0; }
+.markdown-body h2 { border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2); }
+.markdown-body code { background: var(--color-surface-2); border-radius: var(--radius-sm); padding: 0.1em 0.4em; font-size: 0.9em; }
+.markdown-body pre { background: var(--color-surface-2); border-radius: var(--radius-md); padding: var(--space-4); overflow-x: auto; }
+.markdown-body pre code { background: none; padding: 0; }
+.markdown-body table { border-collapse: collapse; margin: var(--space-4) 0; }
+.markdown-body th, .markdown-body td { border: 1px solid var(--color-border); padding: var(--space-2) var(--space-3); text-align: left; }
+.markdown-body blockquote { border-left: 3px solid var(--color-accent); margin: var(--space-4) 0; padding: var(--space-2) var(--space-4); color: var(--color-text-muted); }
