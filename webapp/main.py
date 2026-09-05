@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from webapp import api, config, delimited_parser, field_role_suggest, file_browser, ladcp_scan, paths, quick_convert
+from webapp import api, config, delimited_parser, field_role_suggest, file_browser, ladcp_scan, paths, quick_convert, sadcp_convert
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -111,6 +111,32 @@ def quick_convert_ctd(body: QuickConvertCtdRequest):
         raise HTTPException(status_code=400, detail=str(exc))
 
     return {"ctd_path": ctd_path}
+
+
+class SadcpConvertRequest(BaseModel):
+    contour_dir: str
+
+
+@app.post("/api/sadcp/convert")
+def sadcp_convert_route(body: SadcpConvertRequest):
+    codas_mount = config.MOUNTS.get("codas")
+    data_mount = config.MOUNTS.get("data")
+    if codas_mount is None or not codas_mount.is_dir():
+        raise HTTPException(status_code=404, detail="codas mount not available")
+    if data_mount is None or not data_mount.is_dir():
+        raise HTTPException(status_code=404, detail="data mount not available")
+
+    try:
+        resolved_dir = paths.resolve_within(codas_mount, body.contour_dir)
+    except paths.PathOutsideMountError:
+        raise HTTPException(status_code=400, detail="path is outside the allowed directory")
+
+    try:
+        sadcp_path = sadcp_convert.convert(resolved_dir, data_mount)
+    except sadcp_convert.SadcpConvertError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    return {"sadcp_path": sadcp_path}
 
 
 @app.get("/api/ladcp/scan")
