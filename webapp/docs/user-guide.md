@@ -20,6 +20,7 @@ see the README's example):
 | `ctd` | Pre-converted CTD time series files. |
 | `nav` | Navigation time series files. |
 | `sadcp` | Shipboard ADCP files (optional — not every cruise has these). |
+| `codas` | CODAS shipboard-ADCP output (optional) — used by SADCP data's **Convert CODAS SADCP data** button. |
 
 A mount that wasn't set up when the container was started simply won't
 offer a Browse button for that file type. If a Browse button is missing
@@ -123,6 +124,22 @@ Works the same way as CTD: **Browse**, then **Preview / map columns** to
 map Time, Lat, and Lon fields, with the same auto-suggest / manual-entry
 fallback. **Nav error** is the assumed navigation-fix uncertainty in
 meters (defaults to 30).
+
+## SADCP data
+
+Shipboard ADCP (SADCP) data is optional — leave this field blank if your
+cruise doesn't have any. If you do have it, **Browse** to an existing
+`.mat` file the same way as any other field.
+
+If you instead have CODAS-processed output from the `codas` mount (see
+above), the **Convert CODAS SADCP data** section can build that `.mat`
+file for you: browse to the instrument's `contour/` directory (containing
+`contour_xy.mat` and `contour_uv.mat`) and click **Convert CODAS SADCP
+data**. This runs the same conversion LDEO_IX's own `mkSADCP.m` always
+has — it covers the whole voyage in one file, not just this cast, so you
+only need to do it once and then point every cast's SADCP field at the
+same converted file. This section only appears if a `codas` mount was set
+up when the container was started.
 
 ## Position / time / bottom-tracking
 

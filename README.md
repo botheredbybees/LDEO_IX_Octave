@@ -52,6 +52,7 @@ docker run --rm -p 8080:8080 \
   -v "$(pwd)/my_cruise/ctd:/ctd_data" \
   -v "$(pwd)/my_cruise/sadcp:/sadcp_data" \
   -v "$(pwd)/my_cruise/nav:/navigation_data" \
+  -v "$(pwd)/my_cruise/codas:/codas_data" \
   ldeo-ix-octave
 ```
 
@@ -94,6 +95,24 @@ a hard blocker. Converted files are written under `data/quick_convert/`
 the read-only-safe default flow. Quick-converted files are always named
 `<original>.UNVALIDATED_QUICKCONVERT.cnv` so the provenance travels with
 the file even outside this tool.
+
+### SADCP conversion from CODAS output
+
+If your voyage ran the University of Hawaii's UHDAS/CODAS shipboard-ADCP
+processing (e.g. via the `nuyina_uhdas_codas` sister project), mount that
+instrument's CODAS output at `/codas_data` and the SADCP fieldset gets a
+**Convert CODAS SADCP data** option. Point it at the instrument's
+`contour/` output directory (containing `contour_xy.mat` and
+`contour_uv.mat`) and it produces the `.mat` file `loadsadcp.m` expects —
+a direct port of `ldeo_ix/mkSADCP.m`, the same conversion LDEO_IX's own
+maintainer has always used for this. Unlike Quick-convert above, this
+performs no calibration of its own and carries no "unvalidated" caveat —
+it only reformats an already-processed CODAS product.
+
+Run it once per voyage (or again after CODAS reprocessing); the same
+converted file works for every cast — LDEO_IX picks the relevant time
+window out of it at processing time via `p.sadcp_dtok`. Converted files
+are written to `data/sadcp_convert/<instrument>.SADCP.mat`.
 
 ### Direct Octave CLI
 
