@@ -475,7 +475,7 @@ end
 drw=medianan(abs(diff(d.rw(d.izd,:))));
 dru=medianan(abs(diff(d.rv(d.izd,:))));
 drv=medianan(abs(diff(d.ru(d.izd,:))));
-nbad=find(abs(drw)<0.005 & abs(dru)<0.005 & abs(dru)<0.005);
+nbad=find(abs(drw)<0.005 & abs(dru)<0.005 & abs(drv)<0.005);
 if length(nbad) > 0.2*length(it)
   warn=([' down looker ',int2str(length(nbad)),' ensembles  ',...
            ' have no flow gradient. ']);
@@ -497,7 +497,7 @@ if length(d.izu)>1
  drw=medianan(abs(diff(d.rw(d.izu,:))));
  dru=medianan(abs(diff(d.rv(d.izu,:))));
  drv=medianan(abs(diff(d.ru(d.izu,:))));
- nbad=find(abs(drw)<0.005 & abs(dru)<0.005 & abs(dru)<0.005);
+ nbad=find(abs(drw)<0.005 & abs(dru)<0.005 & abs(drv)<0.005);
  if length(nbad) > 0.2*length(it)
    warn=(['   up looker ',int2str(length(nbad)),' ensembles  ',...
             ' have no flow gradient.']);

@@ -26,12 +26,37 @@ of MATLAB. Every change is listed here; nothing else was touched.
    in `loadnav.m` itself** — set `f.nav_time_base` directly in your own
    `set_cast_params.m` (see `examples/`) as a workaround.
 
-4. **`end_processing_step.m`**: the original checkpoint-save idiom
+4. **`loadrdi.m`**: a real, pre-existing bug, not introduced here. The
+   no-flow-gradient ("dead instrument") check in both the down-looker and
+   up-looker branches computed `dru` and `drv` correctly but then tested
+   `dru` twice, never `drv` — so a cast with a genuinely dead v-component
+   would pass the check unnoticed. Originally left unpatched here so this
+   image's output could be diff-checked against published data processed
+   with the unmodified upstream MATLAB version; that comparison is long
+   done, and leaving the bug in was an oversight rather than a deliberate
+   choice. Now patched (two occurrences, around lines 478 and 500):
+
+   ```
+   -nbad=find(abs(drw)<0.005 & abs(dru)<0.005 & abs(dru)<0.005);
+   +nbad=find(abs(drw)<0.005 & abs(dru)<0.005 & abs(drv)<0.005);
+   ```
+
+5. **`end_processing_step.m`**: the original checkpoint-save idiom
    (`eval(sprintf('save %s_%d', f.checkpoints, pcs.cur_step))`) has no
    `.mat` extension. MATLAB's `save name` auto-appends `.mat`; Octave's does
    not. `begin_processing_step.m`'s `load(sprintf('%s_%d.mat', ...))`
    expects the extension, so checkpoint resume silently failed until this
    was fixed to `save %s_%d.mat`.
+
+## Upstream contact
+
+The `loadnav.m` (`nav_time_base`) and `loadrdi.m` (`drv`) bugs above were
+reported to Andreas Thurnherr, the current maintainer of LDEO_IX, on
+2026-09-03. He confirmed on 2026-09-04 that both are real and will be
+folded into upstream — including a successor version he is developing,
+tentatively named LDEO_XI, not yet published. Nothing here depends on that
+future release; noted so a later session doesn't have to re-derive whether
+these were genuine bugs from scratch.
 
 ## Missing/incompatible functions — fixed via `stubs/`
 
