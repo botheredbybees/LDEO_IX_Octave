@@ -140,6 +140,24 @@
     </fieldset>
 
     <fieldset class="card">
+      <legend>SADCP</legend>
+      <label>File
+        <input name="sadcp" id="sadcp-path">
+        <button type="button" id="browse-sadcp" class="btn btn-secondary">Browse</button>
+      </label>
+
+      <details id="sadcp-convert-section" hidden>
+        <summary>Convert CODAS SADCP data</summary>
+        <label>CODAS contour directory
+          <input id="codas-contour-path" readonly>
+          <button type="button" id="browse-codas-contour" class="btn btn-secondary">Browse</button>
+        </label>
+        <button type="button" id="run-sadcp-convert" class="btn btn-secondary">Convert CODAS SADCP data</button>
+        <div id="sadcp-convert-result"></div>
+      </details>
+    </fieldset>
+
+    <fieldset class="card">
       <legend>Position / time / bottom-tracking</legend>
       <div class="field-grid">
         <label>Lat <input name="lat" type="number" step="any"></label>

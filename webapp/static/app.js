@@ -332,7 +332,8 @@ document.querySelectorAll(".field-map-manual").forEach((manual) => {
   });
 });
 
-async function renderBrowserPanel(container, mount, targetInputId, relativePath) {
+async function renderBrowserPanel(container, mount, targetInputId, relativePath, options = {}) {
+  const { selectDirs = false } = options;
   container.dataset.currentPath = relativePath;
   container.innerHTML = "";
 
@@ -340,6 +341,19 @@ async function renderBrowserPanel(container, mount, targetInputId, relativePath)
   pathLine.className = "browser-path";
   pathLine.textContent = `${mount}:/${relativePath}`;
   container.appendChild(pathLine);
+
+  if (selectDirs) {
+    const useButton = document.createElement("button");
+    useButton.type = "button";
+    useButton.className = "btn btn-secondary";
+    useButton.textContent = "Use this directory";
+    useButton.addEventListener("click", () => {
+      document.getElementById(targetInputId).value = relativePath;
+      updateSaveStateFromForm();
+      closeModal();
+    });
+    container.appendChild(useButton);
+  }
 
   let data;
   try {
@@ -358,7 +372,7 @@ async function renderBrowserPanel(container, mount, targetInputId, relativePath)
     up.textContent = ".. (up)";
     up.addEventListener("click", () => {
       const parent = relativePath.split("/").slice(0, -1).join("/");
-      renderBrowserPanel(container, mount, targetInputId, parent);
+      renderBrowserPanel(container, mount, targetInputId, parent, options);
     });
     container.appendChild(up);
   }
@@ -369,8 +383,8 @@ async function renderBrowserPanel(container, mount, targetInputId, relativePath)
     row.textContent = entry.is_dir ? `${entry.name}/` : entry.name;
     row.addEventListener("click", () => {
       if (entry.is_dir) {
-        renderBrowserPanel(container, mount, targetInputId, entry.relative_path);
-      } else {
+        renderBrowserPanel(container, mount, targetInputId, entry.relative_path, options);
+      } else if (!selectDirs) {
         document.getElementById(targetInputId).value = entry.relative_path;
         if (targetInputId === "ctd-path") updateQuickConvertWarning();
         updateSaveStateFromForm();
@@ -381,10 +395,10 @@ async function renderBrowserPanel(container, mount, targetInputId, relativePath)
   }
 }
 
-function initBrowser(buttonId, mount, targetInputId) {
+function initBrowser(buttonId, mount, targetInputId, options = {}) {
   document.getElementById(buttonId).addEventListener("click", () => {
     openModal(`Browse ${mount}`, (body) => {
-      renderBrowserPanel(body, mount, targetInputId, "");
+      renderBrowserPanel(body, mount, targetInputId, "", options);
     });
   });
 }
@@ -396,6 +410,33 @@ initBrowser("browse-ladcpup", "ladcp", "ladcpup-path");
 
 initBrowser("browse-quickconvert-hex", "ctd", "quickconvert-hex-path");
 initBrowser("browse-quickconvert-xmlcon", "ctd", "quickconvert-xmlcon-path");
+
+initBrowser("browse-sadcp", "sadcp", "sadcp-path");
+initBrowser("browse-codas-contour", "codas", "codas-contour-path", { selectDirs: true });
+
+document.getElementById("run-sadcp-convert").addEventListener("click", async () => {
+  const contourDir = document.getElementById("codas-contour-path").value;
+  const result = document.getElementById("sadcp-convert-result");
+  if (!contourDir) {
+    result.textContent = "Pick a CODAS contour directory first.";
+    result.className = "error";
+    return;
+  }
+  try {
+    const body = await api("/api/sadcp/convert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contour_dir: contourDir }),
+    });
+    document.getElementById("sadcp-path").value = body.sadcp_path;
+    updateSaveStateFromForm();
+    result.textContent = `Converted. SADCP file set to ${body.sadcp_path}.`;
+    result.className = "";
+  } catch (e) {
+    result.textContent = (e.body && e.body.detail) || "SADCP conversion failed.";
+    result.className = "error";
+  }
+});
 
 const QUICKCONVERT_SUFFIX = ".UNVALIDATED_QUICKCONVERT.cnv";
 
@@ -515,4 +556,10 @@ document.getElementById("generate").addEventListener("click", async () => {
   }
 });
 
+async function initSadcpConvertVisibility() {
+  const { mounts } = await api("/api/mounts");
+  document.getElementById("sadcp-convert-section").hidden = !mounts.includes("codas");
+}
+
 refreshCastList();
+initSadcpConvertVisibility();
