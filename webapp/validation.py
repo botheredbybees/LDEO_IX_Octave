@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from webapp import config, paths, quick_convert
+from webapp import config, paths, quick_convert, sadcp_convert
 from webapp.models import CruiseSession
 
 REQUIRED_FIELDS = [
@@ -51,6 +51,9 @@ def validate_session(session: CruiseSession) -> ValidationResult:
             if not relative:
                 continue
             if field_name == "ctd" and relative.endswith(quick_convert.QUICKCONVERT_SUFFIX):
+                mount_root = config.MOUNTS.get("data")
+                checked_mount_name = "data"
+            elif field_name == "sadcp" and relative.endswith(sadcp_convert.SADCP_CONVERT_SUFFIX):
                 mount_root = config.MOUNTS.get("data")
                 checked_mount_name = "data"
             else:

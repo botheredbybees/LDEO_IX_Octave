@@ -128,3 +128,48 @@ def test_missing_quick_converted_ctd_warns_about_data_mount_not_ctd_mount(tmp_pa
 
     assert result.is_valid is True
     assert "quick_convert/cast.UNVALIDATED_QUICKCONVERT.cnv not found under data mount" in result.warnings[cast.id]
+
+
+def test_sadcp_converted_file_checked_against_data_mount_not_sadcp_mount(tmp_path, monkeypatch):
+    data_mount = tmp_path / "data"
+    sadcp_mount = tmp_path / "sadcp"
+    ladcp_mount = tmp_path / "ladcp"
+    data_mount.mkdir()
+    sadcp_mount.mkdir()
+    ladcp_mount.mkdir()
+    sadcp_convert_dir = data_mount / "sadcp_convert"
+    sadcp_convert_dir.mkdir()
+    (sadcp_convert_dir / "os150nb.SADCP.mat").write_text("fake mat")
+    (ladcp_mount / "003DL000.000").write_text("")
+    (ladcp_mount / "003UL000.000").write_text("")
+    monkeypatch.setitem(config.MOUNTS, "data", data_mount)
+    monkeypatch.setitem(config.MOUNTS, "sadcp", sadcp_mount)
+    monkeypatch.setitem(config.MOUNTS, "ladcp", ladcp_mount)
+
+    session = CruiseSession(casts=[_valid_cast(sadcp="sadcp_convert/os150nb.SADCP.mat")])
+
+    result = validation.validate_session(session)
+
+    assert result.warnings == {}
+
+
+def test_missing_sadcp_converted_file_warns_about_data_mount_not_sadcp_mount(tmp_path, monkeypatch):
+    data_mount = tmp_path / "data"
+    sadcp_mount = tmp_path / "sadcp"
+    ladcp_mount = tmp_path / "ladcp"
+    data_mount.mkdir()
+    sadcp_mount.mkdir()
+    ladcp_mount.mkdir()
+    (ladcp_mount / "003DL000.000").write_text("")
+    (ladcp_mount / "003UL000.000").write_text("")
+    monkeypatch.setitem(config.MOUNTS, "data", data_mount)
+    monkeypatch.setitem(config.MOUNTS, "sadcp", sadcp_mount)
+    monkeypatch.setitem(config.MOUNTS, "ladcp", ladcp_mount)
+
+    cast = _valid_cast(sadcp="sadcp_convert/os150nb.SADCP.mat")
+    session = CruiseSession(casts=[cast])
+
+    result = validation.validate_session(session)
+
+    assert result.is_valid is True
+    assert "sadcp_convert/os150nb.SADCP.mat not found under data mount" in result.warnings[cast.id]
