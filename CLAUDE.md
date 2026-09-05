@@ -84,25 +84,38 @@ acknowledged. Implications for future work:
 - This machine is Windows; `docker build`/`docker run` work fine from Git
   Bash. Line-ending warnings (`LF will be replaced by CRLF`) on `git add`
   are normal noise from `core.autocrlf`, not a problem to fix.
-- **Run `webapp/` tests from `.venv/` (Python 3.10), not the machine's
+- **Run `webapp/` tests from `.venv312/` (Python 3.12), not the machine's
   default `python3`.** The default `python3` on this machine resolves to
   an Anaconda install (Python 3.9.13) with a much older `fastapi`/
   `starlette` than `webapp/requirements.txt` pins — old enough that
   `templates.TemplateResponse(request, "index.html")`'s newer
   positional-request-arg call raises `ValueError: context must include a
   "request" key` on every route that calls it (`test_help_route.py`'s two
-  tests, and in fact any page render). `.venv/` was created with
-  `/usr/bin/python3.10` (already present on this machine, separate from
-  Anaconda) and has `fastapi`/`starlette`/`scipy` etc. installed at the
-  versions `webapp/requirements.txt` actually pins — activate it or call
-  `.venv/bin/python`/`.venv/bin/pytest` directly. `ctdam` (needs Python
-  ≥3.12, confirmed 2026-08-18 during the CTD quick-convert work) still
-  isn't installable even in this venv, so the 3 CTD-quick-convert tests
-  that need it still skip here exactly as they do everywhere outside the
-  real Docker image — that's expected, not something this venv is meant
-  to fix. Confirmed 2026-09-06: `.venv/bin/python -m pytest webapp/tests`
-  gives 102 passed, 3 skipped, 0 failed, vs. 100 passed/3 skipped/**2
-  failed** on the bare `python3`.
+  tests, and in fact any page render). This machine also has no system
+  `python3.12` (Mint 21.3/Ubuntu-22.04-based; would need the deadsnakes
+  PPA), so `.venv312/` was bootstrapped from a small conda env instead:
+  `conda create -n ldeo-py312-bootstrap python=3.12`, then
+  `/home/peter_sha/anaconda3/envs/ldeo-py312-bootstrap/bin/python3.12 -m venv .venv312`.
+  **`.venv312/bin/python3.12` is a symlink into that conda env — don't
+  `conda env remove -n ldeo-py312-bootstrap`, it would break the venv.**
+  `webapp/requirements.txt`'s full pinned set, `ctdam` included, installs
+  cleanly under 3.12 (unlike under 3.10 — `ctdam`/`seabirdscientific`
+  need Python ≥3.12, confirmed 2026-08-18 during the CTD quick-convert
+  work), so this is the one venv that runs the complete suite with
+  nothing skipped, matching the real Docker image's own interpreter
+  (`gnuoctave/octave:9.2.0` is Ubuntu 24.04 / Python 3.12.3) more closely
+  than any other option on this machine. Activate it or call
+  `.venv312/bin/python -m pytest`/`.venv312/bin/pip` directly (call
+  console-script shims like a bare `.venv312/bin/pytest` only after
+  activating — their shebang lines are absolute paths baked in at
+  creation time). Confirmed 2026-09-06:
+  `.venv312/bin/python -m pytest webapp/tests` gives **105 passed, 0
+  skipped, 0 failed**, vs. 100 passed/3 skipped/2 failed on the bare
+  `python3`. One harmless `RuntimeWarning: numpy.ndarray size changed`
+  shows up from `ctdam`/`seabirdscientific` (compiled against an older
+  numpy ABI than the numpy 2.2.6 that `scipy==1.14.*` pulls in) — this
+  reflects the real pinned `requirements.txt` as installed anywhere,
+  Docker included, not something specific to this venv.
 - No test suite exists (there's no reference cast data shipped in this
   repo — that lived in the source project's `test_data/`, not copied here).
   "Testing" a change means building the image and running the relevant
