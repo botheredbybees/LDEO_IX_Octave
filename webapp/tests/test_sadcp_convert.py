@@ -129,6 +129,38 @@ def test_convert_raises_for_incompatible_uv_shape(tmp_path):
         sadcp_convert.convert(contour_dir, data_mount)
 
 
+def test_convert_raises_for_too_few_xyt_rows(tmp_path):
+    contour_dir = tmp_path / "contour"
+    contour_dir.mkdir()
+    savemat(str(contour_dir / "contour_xy.mat"), {
+        "xyt": np.vstack([[148.5, 148.6], [-42.5, -42.6]]),  # only 2 rows: lon, lat -- no dday
+        "zc": np.array([[10.0]]),
+        "year_base": 2024.0,
+    })
+    savemat(str(contour_dir / "contour_uv.mat"), {"uv": np.zeros((1, 4))})
+    data_mount = tmp_path / "data"
+    data_mount.mkdir()
+
+    with pytest.raises(sadcp_convert.SadcpConvertError):
+        sadcp_convert.convert(contour_dir, data_mount)
+
+
+def test_convert_raises_for_non_numeric_year_base(tmp_path):
+    contour_dir = tmp_path / "contour"
+    contour_dir.mkdir()
+    savemat(str(contour_dir / "contour_xy.mat"), {
+        "xyt": np.vstack([[148.5, 148.6], [-42.5, -42.6], [100.0, 100.1]]),
+        "zc": np.array([[10.0]]),
+        "year_base": "not-a-number",
+    })
+    savemat(str(contour_dir / "contour_uv.mat"), {"uv": np.zeros((1, 4))})
+    data_mount = tmp_path / "data"
+    data_mount.mkdir()
+
+    with pytest.raises(sadcp_convert.SadcpConvertError):
+        sadcp_convert.convert(contour_dir, data_mount)
+
+
 def test_convert_raises_when_all_entries_invalid(tmp_path):
     contour_dir = tmp_path / "contour"
     lon = np.array([np.nan, np.nan])

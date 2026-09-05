@@ -557,8 +557,12 @@ document.getElementById("generate").addEventListener("click", async () => {
 });
 
 async function initSadcpConvertVisibility() {
-  const { mounts } = await api("/api/mounts");
-  document.getElementById("sadcp-convert-section").hidden = !mounts.includes("codas");
+  try {
+    const { mounts } = await api("/api/mounts");
+    document.getElementById("sadcp-convert-section").hidden = !mounts.includes("codas");
+  } catch (e) {
+    // Fails safe: section stays hidden (its default state in the HTML).
+  }
 }
 
 refreshCastList();

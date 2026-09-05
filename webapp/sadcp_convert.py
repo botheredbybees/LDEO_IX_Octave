@@ -1,3 +1,17 @@
+"""
+Python port of ldeo_ix/mkSADCP.m (c) 2004 A.M. Thurnherr, and the
+day-number formula from ldeo_ix/julian.m (recoded for MATLAB by Rich
+Signell) -- see NOTICE.md. The logic in this module is derived from
+that unlicensed ldeo_ix/ code; only its expression in Python is this
+project's own MIT-licensed work.
+
+One deliberate divergence from mkSADCP.m: the NaN-filter here uses
+np.isfinite (excluding +/-inf as well as NaN), where mkSADCP.m checks
+isnan only. An infinite lat/lon/time value is not usable data either
+way, so this is treated as a safe strengthening, not a behavior change
+worth reverting.
+"""
+
 from pathlib import Path
 
 import numpy as np
@@ -53,10 +67,18 @@ def convert(contour_dir: Path, data_mount_root: Path) -> str:
     if missing_uv:
         raise SadcpConvertError(f"{uv_path} is missing expected variable(s): {', '.join(missing_uv)}")
 
-    xyt = np.asarray(xy["xyt"], dtype=float)
-    z_sadcp = np.asarray(xy["zc"], dtype=float).reshape(-1, 1)
-    year_base = float(np.asarray(xy["year_base"]).squeeze())
-    uv_arr = np.asarray(uv["uv"], dtype=float)
+    try:
+        xyt = np.asarray(xy["xyt"], dtype=float)
+        z_sadcp = np.asarray(xy["zc"], dtype=float).reshape(-1, 1)
+        year_base = float(np.asarray(xy["year_base"]).squeeze())
+        uv_arr = np.asarray(uv["uv"], dtype=float)
+    except Exception as exc:
+        raise SadcpConvertError(f"could not parse expected variables from {xy_path}: {exc}") from exc
+
+    if xyt.ndim != 2 or xyt.shape[0] < 3:
+        raise SadcpConvertError(
+            f"{xy_path}'s 'xyt' has shape {xyt.shape}, expected at least 3 rows (lon, lat, dday)"
+        )
 
     if uv_arr.ndim != 2 or uv_arr.shape[1] != 2 * xyt.shape[1]:
         raise SadcpConvertError(

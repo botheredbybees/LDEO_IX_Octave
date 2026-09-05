@@ -22,9 +22,16 @@ authors. If you are one of the authors and object to this distribution, or
 can point to an authoritative license, please open an issue and it will be
 addressed promptly.
 
+`webapp/sadcp_convert.py` is a Python port of `ldeo_ix/mkSADCP.m` (see
+above) and of the day-number formula in `ldeo_ix/julian.m`. Its logic
+carries the same no-formal-license status as `ldeo_ix/` itself; only
+its expression as a new, independent Python module is covered by this
+project's own MIT license below.
+
 Everything **outside** `ldeo_ix/` and `stubs/` in this repository (the
-Dockerfile, build scripts, and documentation) is original packaging work
-and is licensed under the MIT License — see `LICENSE`.
+Dockerfile, build scripts, and documentation), with the exception of
+`webapp/sadcp_convert.py`'s ported logic noted above, is original
+packaging work and is licensed under the MIT License — see `LICENSE`.
 
 `stubs/` contains small, original no-op replacement functions written for
 this project to allow headless execution (see `CHANGES.md`); they are

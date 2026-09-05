@@ -60,7 +60,9 @@ def test_sadcp_convert_surfaces_conversion_error(tmp_path, monkeypatch):
     assert "contour_xy.mat not found" in response.json()["detail"]
 
 
-def test_sadcp_convert_rejects_missing_codas_mount():
+def test_sadcp_convert_rejects_missing_codas_mount(tmp_path, monkeypatch):
+    monkeypatch.setitem(config.MOUNTS, "codas", tmp_path / "does-not-exist")
+
     client = TestClient(main.app)
     response = client.post("/api/sadcp/convert", json={"contour_dir": "os150nb/contour"})
 

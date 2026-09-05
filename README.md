@@ -56,6 +56,11 @@ docker run --rm -p 8080:8080 \
   ldeo-ix-octave
 ```
 
+(Omit the `codas` mount line if your voyage has no CODAS output — Docker
+would otherwise auto-create an empty `codas` directory, and the
+"Convert CODAS SADCP data" UI section only appears when this mount is
+actually configured.)
+
 Open `http://localhost:8080/` and add each cast — the form suggests raw
 LADCP file pairs, lets you preview and column-map CTD/nav files, and can
 clone a previous cast (in this session, or from a prior processed cast's
@@ -112,7 +117,9 @@ it only reformats an already-processed CODAS product.
 Run it once per voyage (or again after CODAS reprocessing); the same
 converted file works for every cast — LDEO_IX picks the relevant time
 window out of it at processing time via `p.sadcp_dtok`. Converted files
-are written to `data/sadcp_convert/<instrument>.SADCP.mat`.
+are written to `data/sadcp_convert/<instrument>.SADCP.mat` — as with
+Quick-convert above, the `data` mount must be writable for this feature
+to work.
 
 ### Direct Octave CLI
 
