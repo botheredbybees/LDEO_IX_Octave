@@ -84,6 +84,25 @@ acknowledged. Implications for future work:
 - This machine is Windows; `docker build`/`docker run` work fine from Git
   Bash. Line-ending warnings (`LF will be replaced by CRLF`) on `git add`
   are normal noise from `core.autocrlf`, not a problem to fix.
+- **Run `webapp/` tests from `.venv/` (Python 3.10), not the machine's
+  default `python3`.** The default `python3` on this machine resolves to
+  an Anaconda install (Python 3.9.13) with a much older `fastapi`/
+  `starlette` than `webapp/requirements.txt` pins — old enough that
+  `templates.TemplateResponse(request, "index.html")`'s newer
+  positional-request-arg call raises `ValueError: context must include a
+  "request" key` on every route that calls it (`test_help_route.py`'s two
+  tests, and in fact any page render). `.venv/` was created with
+  `/usr/bin/python3.10` (already present on this machine, separate from
+  Anaconda) and has `fastapi`/`starlette`/`scipy` etc. installed at the
+  versions `webapp/requirements.txt` actually pins — activate it or call
+  `.venv/bin/python`/`.venv/bin/pytest` directly. `ctdam` (needs Python
+  ≥3.12, confirmed 2026-08-18 during the CTD quick-convert work) still
+  isn't installable even in this venv, so the 3 CTD-quick-convert tests
+  that need it still skip here exactly as they do everywhere outside the
+  real Docker image — that's expected, not something this venv is meant
+  to fix. Confirmed 2026-09-06: `.venv/bin/python -m pytest webapp/tests`
+  gives 102 passed, 3 skipped, 0 failed, vs. 100 passed/3 skipped/**2
+  failed** on the bare `python3`.
 - No test suite exists (there's no reference cast data shipped in this
   repo — that lived in the source project's `test_data/`, not copied here).
   "Testing" a change means building the image and running the relevant
