@@ -34,6 +34,31 @@ for required_dir in ctd nav data ladcp; do
   fi
 done
 
+# Pre-flight validation of required config fields
+for field in station cast_name ladcpdo ladcpup nav lat lon time_start time_end; do
+  if [ "$(jq -e "has(\"$field\")" "$CONFIG_FILE" 2>/dev/null || echo false)" != "true" ]; then
+    echo "error: cast config is missing required field: $field" >&2
+    exit 1
+  fi
+done
+
+# Validate CTD source: either (ctd_hex AND ctd_xmlcon) or ctd_cnv
+HAS_CTD_HEX=$(jq -r 'has("ctd_hex")' "$CONFIG_FILE")
+HAS_CTD_XMLCON=$(jq -r 'has("ctd_xmlcon")' "$CONFIG_FILE")
+HAS_CTD_CNV=$(jq -r 'has("ctd_cnv")' "$CONFIG_FILE")
+if [ "$HAS_CTD_HEX" = "true" ] && [ "$HAS_CTD_XMLCON" != "true" ]; then
+  echo "error: cast config sets ctd_hex but not ctd_xmlcon -- both are required for quick-convert" >&2
+  exit 1
+fi
+if [ "$HAS_CTD_XMLCON" = "true" ] && [ "$HAS_CTD_HEX" != "true" ]; then
+  echo "error: cast config sets ctd_xmlcon but not ctd_hex -- both are required for quick-convert" >&2
+  exit 1
+fi
+if [ "$HAS_CTD_HEX" != "true" ] && [ "$HAS_CTD_CNV" != "true" ]; then
+  echo "error: cast config must provide either (ctd_hex AND ctd_xmlcon) or ctd_cnv" >&2
+  exit 1
+fi
+
 HAS_SADCP_CONTOUR=$(jq -r 'has("sadcp_contour_dir")' "$CONFIG_FILE")
 HAS_SADCP_MAT=$(jq -r 'has("sadcp_mat_path")' "$CONFIG_FILE")
 if [ "$HAS_SADCP_CONTOUR" = "true" ] && [ "$HAS_SADCP_MAT" = "true" ]; then
@@ -100,22 +125,20 @@ fi
 
 echo "mounts available: $(curl -sf "$BASE_URL/api/mounts")"
 
-HTTP_CODE=""
 http_post() {
   local path="$1" body="$2"
-  local response
-  response=$(curl -sS -w '\n%{http_code}' -X POST "$BASE_URL$path" \
-    -H 'Content-Type: application/json' -d "$body")
-  HTTP_CODE=$(echo "$response" | tail -n1)
-  echo "$response" | sed '$d'
+  curl -sS -w '\n%{http_code}' -X POST "$BASE_URL$path" \
+    -H 'Content-Type: application/json' -d "$body"
 }
 
-if [ "$(jq -r 'has("ctd_hex")' "$CONFIG_FILE")" = "true" ]; then
+if [ "$HAS_CTD_HEX" = "true" ]; then
   HEX_PATH=$(jq -r '.ctd_hex' "$CONFIG_FILE")
   XMLCON_PATH=$(jq -r '.ctd_xmlcon' "$CONFIG_FILE")
   echo "quick-converting $HEX_PATH ..."
   BODY=$(jq -n --arg hex "$HEX_PATH" --arg xmlcon "$XMLCON_PATH" '{hex_path: $hex, xmlcon_path: $xmlcon}')
-  RESPONSE=$(http_post "/api/quick-convert/ctd" "$BODY")
+  RAW=$(http_post "/api/quick-convert/ctd" "$BODY")
+  HTTP_CODE=$(echo "$RAW" | tail -n1)
+  RESPONSE=$(echo "$RAW" | sed '$d')
   if [ "$HTTP_CODE" != "200" ]; then
     echo "error: quick-convert failed ($HTTP_CODE): $RESPONSE" >&2
     exit 1
@@ -130,14 +153,17 @@ if [ "$HAS_SADCP_CONTOUR" = "true" ]; then
   CONTOUR_DIR=$(jq -r '.sadcp_contour_dir' "$CONFIG_FILE")
   echo "converting SADCP contour $CONTOUR_DIR ..."
   BODY=$(jq -n --arg dir "$CONTOUR_DIR" '{contour_dir: $dir}')
-  RESPONSE=$(http_post "/api/sadcp/convert" "$BODY")
+  RAW=$(http_post "/api/sadcp/convert" "$BODY")
+  HTTP_CODE=$(echo "$RAW" | tail -n1)
+  RESPONSE=$(echo "$RAW" | sed '$d')
   if [ "$HTTP_CODE" != "200" ]; then
     echo "error: sadcp-convert failed ($HTTP_CODE): $RESPONSE" >&2
     exit 1
   fi
   SADCP_PATH=$(echo "$RESPONSE" | jq -r '.sadcp_path')
 elif [ "$HAS_SADCP_MAT" = "true" ]; then
-  SADCP_PATH=$(jq -r '.sadcp_mat_path' "$CONFIG_FILE")
+  SADCP_RELATIVE=$(jq -r '.sadcp_mat_path' "$CONFIG_FILE")
+  SADCP_PATH="/sadcp_data/$SADCP_RELATIVE"
 fi
 
 PASSTHROUGH_KEYS='["ctd_header_lines","ctd_fields_per_line","ctd_time_field","ctd_pressure_field",
@@ -167,14 +193,18 @@ if [ -n "$SADCP_PATH" ]; then
 fi
 
 echo "creating cast session entry ..."
-RESPONSE=$(http_post "/api/session/casts" "$CAST_BODY")
+RAW=$(http_post "/api/session/casts" "$CAST_BODY")
+HTTP_CODE=$(echo "$RAW" | tail -n1)
+RESPONSE=$(echo "$RAW" | sed '$d')
 if [ "$HTTP_CODE" != "201" ]; then
   echo "error: creating cast failed ($HTTP_CODE): $RESPONSE" >&2
   exit 1
 fi
 
 echo "generating set_cast_params.m ..."
-RESPONSE=$(http_post "/api/generate" "{}")
+RAW=$(http_post "/api/generate" "{}")
+HTTP_CODE=$(echo "$RAW" | tail -n1)
+RESPONSE=$(echo "$RAW" | sed '$d')
 if [ "$HTTP_CODE" != "200" ]; then
   echo "error: /api/generate failed ($HTTP_CODE): $RESPONSE" >&2
   exit 1
