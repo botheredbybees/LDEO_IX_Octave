@@ -47,10 +47,10 @@ values interactively — and reuse them for the rest of that instrument's casts.
 
 This is the part that's genuinely different for every organization. `process_cast.sh` (and the
 webapp underneath it) requires your nav data as a **plain whitespace-delimited, all-numeric**
-table, one row per fix, no header:
+table, one row per fix, no header. Columns are, in order: `elapsed_seconds`, `latitude_decimal_degrees`,
+`longitude_decimal_degrees`:
 
 ```
-elapsed_seconds latitude_decimal_degrees longitude_decimal_degrees
 0.000 -42.559128 148.490637
 10.021 -42.559140 148.490655
 ```
@@ -94,6 +94,25 @@ processing step 3 — supplying it manually changes the timing of a bottom-track
 threshold and produces a materially different, incorrect solution. If your instrument's own
 software reports a declination value, don't put it in your cast-config.json; the pipeline
 computes its own from your real nav data.
+
+## Pre-flight validation — the script fails fast with clear errors
+
+Before starting any Docker container or processing step, `scripts/process_cast.sh` validates your
+`cast-config.json` and staging directory against the contract described above, with explicit error
+messages for any problems:
+
+- **Required fields**: `station`, `cast_name`, `ladcpdo`, `ladcpup`, `nav`, `lat`, `lon`,
+  `time_start`, `time_end` must all be present.
+- **CTD source**: must provide either (`ctd_hex` AND `ctd_xmlcon` together) or `ctd_cnv` alone —
+  not a mix, and not all three.
+- **SADCP source**: can provide either `sadcp_contour_dir` or `sadcp_mat_path`, but not both.
+  If you set `sadcp_contour_dir`, the staging directory must have a `codas/` subdirectory. If you
+  set `sadcp_mat_path`, the staging directory must have a `sadcp/` subdirectory.
+- **Magnetic declination**: the config must not include a `drot` field.
+
+If any of these conditions fail, the script exits immediately with a clear error message — you
+won't get a halfway-through-Docker error buried in logs. This means your fetch/prep script can
+validate once and trust that if `process_cast.sh` runs, the inputs are good.
 
 ## Putting it together: `cast-config.json`
 
