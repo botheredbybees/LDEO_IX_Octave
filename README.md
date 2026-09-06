@@ -28,6 +28,8 @@ See `NOTICE.md` for provenance and license status of the upstream code —
 - `webapp/` — the web intake form (FastAPI + vanilla JS) that generates
   `set_cast_params.m`; see `docs/superpowers/specs/2026-07-15-cruise-cast-intake-form-design.md`
   for its design.
+- `docs/vessel-data-preparation.md` — how to prepare your own vessel's data for
+  `scripts/process_cast.sh` if you're not AAD.
 - `Dockerfile` — builds the image from `docker.io/gnuoctave/octave:9.2.0`.
 
 ## Build
