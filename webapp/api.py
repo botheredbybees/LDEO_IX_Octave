@@ -129,6 +129,19 @@ def generate():
     output = template_gen.render_set_cast_params(session)
     target = config.MOUNTS["data"] / "set_cast_params.m"
 
+    # process_cast.m opens a diary log at [f.res,'.log'] and later saves
+    # checkpoints under f.checkpoints, but never creates either's parent
+    # directory itself -- without this, the very first process_cast run
+    # against a webapp-generated config fails immediately on
+    # "diary: can't open diary file" (confirmed processing a real Nuyina
+    # LADCP cast; see task-3/4-report.md).
+    data_mount = config.MOUNTS["data"]
+    for cast in session.casts:
+        if cast.res_file:
+            (data_mount / cast.res_file).parent.mkdir(parents=True, exist_ok=True)
+        if cast.checkpoints_file:
+            (data_mount / cast.checkpoints_file).parent.mkdir(parents=True, exist_ok=True)
+
     if target.is_file():
         timestamp = datetime.now().strftime("%Y%m%dT%H%M%S%f")
         backup = target.with_name(f"{target.name}.bak.{timestamp}")

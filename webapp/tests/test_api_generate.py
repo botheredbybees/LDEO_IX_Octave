@@ -61,6 +61,26 @@ def test_generate_backs_up_existing_file(tmp_path, monkeypatch):
     assert backups[0].read_text() == "% hand-written\n"
 
 
+def test_generate_creates_res_and_checkpoints_parent_directories(tmp_path, monkeypatch):
+    # process_cast.m opens a diary log at [f.res,'.log'] and later saves
+    # checkpoints under f.checkpoints, but never creates either's parent
+    # directory itself -- without this, the very first process_cast run
+    # against a webapp-generated config fails on "diary: can't open diary
+    # file" (confirmed against a real Nuyina LADCP cast run).
+    monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
+    client = TestClient(main.app)
+    client.post("/api/session/casts", json=_valid_cast_payload())
+
+    assert not (tmp_path / "V7").exists()
+    assert not (tmp_path / "checkpoints").exists()
+
+    response = client.post("/api/generate")
+
+    assert response.status_code == 200
+    assert (tmp_path / "V7").is_dir()
+    assert (tmp_path / "checkpoints").is_dir()
+
+
 def test_rapid_successive_generates_do_not_collide_or_lose_data(tmp_path, monkeypatch):
     monkeypatch.setitem(config.MOUNTS, "data", tmp_path)
     existing = tmp_path / "set_cast_params.m"
