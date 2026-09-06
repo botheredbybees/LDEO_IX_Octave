@@ -103,8 +103,8 @@ messages for any problems:
 
 - **Required fields**: `station`, `cast_name`, `ladcpdo`, `ladcpup`, `nav`, `lat`, `lon`,
   `time_start`, `time_end` must all be present.
-- **CTD source**: must provide either (`ctd_hex` AND `ctd_xmlcon` together) or `ctd_cnv` alone —
-  not a mix, and not all three.
+- **CTD source**: must provide either (`ctd_hex` AND `ctd_xmlcon` together) or `ctd_cnv` alone;
+  setting `ctd_hex` without `ctd_xmlcon` (or vice versa) is rejected.
 - **SADCP source**: can provide either `sadcp_contour_dir` or `sadcp_mat_path`, but not both.
   If you set `sadcp_contour_dir`, the staging directory must have a `codas/` subdirectory. If you
   set `sadcp_mat_path`, the staging directory must have a `sadcp/` subdirectory.
