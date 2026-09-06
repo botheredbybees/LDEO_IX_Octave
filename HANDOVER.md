@@ -264,25 +264,52 @@ achieved (via workarounds) earlier the same day and reproduced cleanly this
 session with the fixes in place:
 
 - 102 depth bins, ~10 m to ~1020 m, ~10 m vertical resolution.
-- `u` in roughly [-0.14, 0.17] m/s, `v` in roughly [-0.09, 0.27] m/s — well
-  inside the plausible-ocean-current envelope, consistent with a
+- `u` in `[-0.071990, 0.166196]` m/s, `v` in `[-0.087944, 0.265295]` m/s —
+  well inside the plausible-ocean-current envelope, consistent with a
   shelf/slope station off south-east Tasmania (real position
-  -42.559°S 148.491°E).
+  -42.559°S 148.491°E). (These are the real fixed-pipeline numbers,
+  re-verified directly against the on-disk `.mat` file for this correction —
+  a previous draft of this section quoted the earlier, superseded workaround
+  run's numbers instead; see `task-5-report.md` for the re-derivation.)
 - No NaN, not all-zero — a genuine computed solution throughout.
 - The inverse solution correlates with the independently-computed shear
-  solution at **r=0.81** in the upper water column — real evidence of
-  resolved current structure, not an inversion artifact.
+  solution: recomputed directly against this run's real `.mat` file,
+  `corr(dr.u, dr.u_shear_method)` = **0.83** over the full profile (**0.97**
+  restricted to the upper 650 m); `corr(dr.v, dr.v_shear_method)` = **0.98**
+  (both scopes). The previously-stated "r=0.81" was computed against the
+  now-superseded workaround run, and no command/method for it was ever
+  recorded, so it isn't a verified reproduction — treat the numbers above as
+  the current, real evidence of resolved current structure in the upper
+  water column, not an inversion artifact.
 - **Read the upper ~650 m as trustworthy current structure.** The deep
   ~370 m (652–1020 m, from the downlooker's own extended range bins, not a
   CTD extrapolation) is **noise-limited**: only ~4 velocity observations
   per bin there (vs. 5–43 shallower), and the reported velocities
   (0.016–0.021 m/s) are roughly 3x smaller than their own error bars —
   statistically indistinguishable from zero. This is because the seabed-
-  detection step failed for this cast (returned an implausible 282 m depth,
+  detection step failed for this cast (returned an implausible 283 m depth,
   shallower than the package's own 652 m profile depth, so LDEO_IX rejected
   it and ran with no bottom-track constraint), and no SADCP data actually
   overlapped this cast's time window either. Don't cite specific deep-bin
   velocity values as measured currents; the shallow result is solid.
+- **Why the workaround run and the real fixed run gave visibly different
+  `u`/`v` ranges (task 3: `u=[-0.137, 0.172]`; task 4/here: `u=[-0.072,
+  0.166]`) — investigated for real, not just declination rounding.** A
+  controlled experiment (see `task-5-report.md`) isolated the cause: it's
+  *when* the magnetic-declination rotation is applied, not the ~0.006°
+  difference in the declination value itself. Supplying `p.drot` via
+  `eval_expr` (the workaround's method) makes it finite before step 1, so
+  `loadrdi.m` rotates the LADCP velocities immediately and `loadnav.m`'s own
+  step-3 rotation is skipped; leaving `p.drot` unset (the real fixed
+  pipeline) rotates once, later, in step 3 instead. Both apply exactly one
+  correct rotation, but a bottom-track QC threshold in step 4 sits close
+  enough to its cutoff to flip by one profile depending on that timing
+  (confirmed: "removed 41" vs "removed 40" bottom-track profiles), which
+  cascades through the super-ensemble/inversion steps into a materially
+  different final solution. Net: `process_cast`'s `eval_expr`-supplied
+  `p.drot` is not numerically equivalent to letting the pipeline compute the
+  same value itself — a real gotcha for anyone using that override on
+  another cast.
 
 ## Where the full detail lives (not pushed, local only)
 
@@ -291,7 +318,10 @@ session with the fixes in place:
 webapp API), `task-3-report.md` (the first, workaround-laden real run —
 full diagnostic numbers, every warning, the physical-plausibility
 assessment in full), `task-4-report.md` (this session's fix wave — exact
-commands and output for every fix's live re-verification). If you need the
-full raw diagnostic output (LADCP QC counts, bottom-track stats, the
+commands and output for every fix's live re-verification), `task-5-report.md`
+(a later re-review's correction of this section's numbers, the recomputed
+inverse/shear correlation, and the controlled experiment that root-caused
+the workaround-vs-real-run `u`/`v` discrepancy). If you need the full raw
+diagnostic output (LADCP QC counts, bottom-track stats, the
 `GETINV`/`CHECKINV` numbers), it's all there — this handover only carries
 the summary since those files don't survive outside this one clone.
