@@ -22,6 +22,15 @@ RUN pip3 install --no-cache-dir --break-system-packages -r /opt/webapp/requireme
 COPY webapp/ /opt/webapp/
 ENV PYTHONPATH=/opt
 
+# Real magdec replacement (ldeo_ix/loadnav.m shells out to a command
+# named magdec on $PATH -- see docs/superpowers/specs/
+# 2026-09-06-magdec-replacement-design.md for why this is a from-scratch
+# tool rather than the original, now-unreachable, distribution).
+COPY magdec/requirements.txt /opt/magdec/requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /opt/magdec/requirements.txt
+COPY magdec/magdec.py /usr/local/bin/magdec
+RUN chmod +x /usr/local/bin/magdec
+
 EXPOSE 8080
 
 # Mount your cruise/cast directory (containing set_cast_params.m and the
