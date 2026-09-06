@@ -1,3 +1,4 @@
+from webapp import config
 from webapp.models import CastEntry, CruiseSession
 
 
@@ -21,14 +22,14 @@ def _render_cast_body(cast: CastEntry) -> list:
             return
         body.append(f"    {field} = {value};")
 
-    add("f.ladcpdo", _quote(cast.ladcpdo))
-    add("f.ladcpup", _quote(cast.ladcpup))
+    add("f.ladcpdo", _mount_quote("ladcp", cast.ladcpdo))
+    add("f.ladcpup", _mount_quote("ladcp", cast.ladcpup))
     add("p.ladcp_station", cast.ladcp_station)
     add("p.ladcp_cast", cast.ladcp_cast)
     add("p.name", _quote(cast.cast_name))
 
     add("f.ctd", _quote(cast.ctd))
-    add("f.nav", _quote(cast.nav))
+    add("f.nav", _mount_quote("nav", cast.nav))
     add("f.ctd_header_lines", cast.ctd_header_lines)
     add("f.ctd_fields_per_line", cast.ctd_fields_per_line)
     add("f.ctd_time_field", cast.ctd_time_field)
@@ -67,6 +68,20 @@ def _render_cast_body(cast: CastEntry) -> list:
 
 def _quote(value: str) -> str:
     return "'" + (value or "").replace("'", "''") + "'"
+
+
+def _mount_quote(mount_name: str, filename: str) -> str:
+    # f.ladcpdo/f.ladcpup/f.nav point at raw files that live on an externally
+    # mounted, read-only directory (/ladcp_data, /navigation_data), never the
+    # /data working directory process_cast runs from. ldeo_ix resolves these
+    # filenames via plain `exist(filename,'file')`, which only searches the
+    # current working directory and Octave's path -- neither mount is on
+    # either, so a bare filename never resolves. Write the mount-absolute
+    # path instead. (Not needed for f.ctd/f.sadcp: those are the webapp's
+    # own conversion outputs, already written as data-relative paths.)
+    if not filename:
+        return _quote(filename)
+    return _quote(str(config.MOUNTS[mount_name] / filename))
 
 
 def _escape(value: str) -> str:

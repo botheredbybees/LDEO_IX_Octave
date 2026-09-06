@@ -1,4 +1,6 @@
-from webapp import template_gen
+from pathlib import Path
+
+from webapp import config, template_gen
 from webapp.models import CastEntry, CruiseSession
 
 
@@ -7,10 +9,10 @@ def _p16n_cast003():
         cast_name="003",
         ladcp_station=3,
         ladcp_cast=1,
-        ladcpdo="data/raw/003DL000.000",
-        ladcpup="data/raw/003UL000.000",
+        ladcpdo="003DL000.000",
+        ladcpup="003UL000.000",
         ctd="data/CTD/2Hz/003.2Hz",
-        nav="data/CTD/2Hz/003.2Hz",
+        nav="003.2Hz",
         ctd_header_lines=0,
         ctd_fields_per_line=11,
         ctd_time_field=1,
@@ -39,7 +41,8 @@ def _p16n_cast003():
     )
 
 
-def test_renders_switch_case_with_one_cast_per_station():
+def test_renders_switch_case_with_one_cast_per_station(monkeypatch):
+    monkeypatch.setitem(config.MOUNTS, "ladcp", Path("/ladcp_data"))
     session = CruiseSession(cruise_id="P16N", casts=[_p16n_cast003()])
 
     output = template_gen.render_set_cast_params(session)
@@ -47,12 +50,34 @@ def test_renders_switch_case_with_one_cast_per_station():
     assert "cruise_id = 'P16N';" in output
     assert "switch stn" in output
     assert "case 3" in output
-    assert "f.ladcpdo = 'data/raw/003DL000.000';" in output
-    assert "f.ladcpup = 'data/raw/003UL000.000';" in output
+    assert "f.ladcpdo = '/ladcp_data/003DL000.000';" in output
+    assert "f.ladcpup = '/ladcp_data/003UL000.000';" in output
     assert "p.lat = -15.498335;" in output
     assert "p.time_start = [2015 4 11 17 36 23.312975];" in output
     assert "p.checkpoints = 1:16;" in output
     assert output.strip().endswith("end")
+
+
+def test_ladcpdo_ladcpup_nav_are_mount_absolute_not_bare_filenames(monkeypatch):
+    # ldeo_ix resolves f.ladcpdo/f.ladcpup/f.nav via exist(filename,'file'), which
+    # only searches the /data working directory and Octave's path -- neither the
+    # /ladcp_data nor /navigation_data mount is on either, so a bare filename
+    # (the webapp's raw-file-scan convention) never resolves. Regression test for
+    # the real "can not find ADCP data file"/silent-NaN-nav failure hit processing
+    # a real Nuyina LADCP cast (task-3-report.md).
+    monkeypatch.setitem(config.MOUNTS, "ladcp", Path("/ladcp_data"))
+    monkeypatch.setitem(config.MOUNTS, "nav", Path("/navigation_data"))
+    session = CruiseSession(cruise_id="P16N", casts=[_p16n_cast003()])
+
+    output = template_gen.render_set_cast_params(session)
+
+    assert "f.ladcpdo = '/ladcp_data/003DL000.000';" in output
+    assert "f.ladcpup = '/ladcp_data/003UL000.000';" in output
+    assert "f.nav = '/navigation_data/003.2Hz';" in output
+    # and not the bare filenames alone
+    assert "f.ladcpdo = '003DL000.000';" not in output
+    assert "f.ladcpup = '003UL000.000';" not in output
+    assert "f.nav = '003.2Hz';" not in output
 
 
 def test_renders_multiple_casts_as_separate_cases():
