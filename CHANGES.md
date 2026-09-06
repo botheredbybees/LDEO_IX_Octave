@@ -48,6 +48,31 @@ of MATLAB. Every change is listed here; nothing else was touched.
    expects the extension, so checkpoint resume silently failed until this
    was fixed to `save %s_%d.mat`.
 
+6. **`loadnav.m`**: a real, pre-existing bug, not introduced here. The
+   `magdec`-not-found fallback branch (around line 269, `if ~isfinite(p.drot)`)
+   builds a warning message with
+   `sprintf('"magdec" not found; using old magdev code with IGRF00',f.IGRF)`
+   — `f.IGRF` is never assigned anywhere in `default.m` or any
+   `set_cast_params.m`, and the format string has no `%s` placeholder for it
+   anyway (so the argument was always dead, never actually used even when it
+   existed). Referencing the unset field crashes Octave
+   (`error: structure has no member 'IGRF'`) before ever reaching the very
+   next line, the actually-working fallback
+   `p.drot = magdev(medianan(d.slat),medianan(d.slon));`. This is not merely
+   theoretical: it crashed step 3 (LOAD GPS DATA) of a real Nuyina LADCP cast
+   005 processing run on 2026-09-06 (this Docker image ships no `magdec`
+   binary, so any cast whose `set_cast_params.m` doesn't already set a finite
+   `p.drot` hits this path) — see
+   `.superpowers/sdd/2026-09-06-nuyina-ladcp-cast-processing/task-3-report.md`
+   and `task-4-report.md`. Fixed by removing the dead `, f.IGRF` argument —
+   behavior-preserving, since the format string never consumed it. (The
+   sibling `if s == 1` branch, taken when `magdec` *is* found, calls
+   `geomag(...)` — a local subfunction defined further down in this same
+   file, not a missing `geomag.m`, so it resolves fine; it would still fail
+   in this image, but via `geomag`'s own `error(['cannot execute <' CMD
+   '>'])` when it re-invokes the missing `magdec` binary, not via an
+   undefined-function/undefined-field error.)
+
 ## Upstream contact
 
 The `loadnav.m` (`nav_time_base`) and `loadrdi.m` (`drv`) bugs above were

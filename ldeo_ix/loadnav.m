@@ -266,7 +266,7 @@ if ~isfinite(p.drot)		      % set magdecl
  if s == 1
    p.drot = geomag(f,meannan(d.navtime_jul),medianan(d.slat),medianan(d.slon));
  else	 
-   warn = sprintf('"magdec" not found; using old magdev code with IGRF00',f.IGRF);
+   warn = sprintf('"magdec" not found; using old magdev code with IGRF00');
    disp(['WARNING: ' warn]);
    p.warn(size(p.warn,1)+1,1:length(warn))=warn;
    p.drot = magdev(medianan(d.slat),medianan(d.slon));
