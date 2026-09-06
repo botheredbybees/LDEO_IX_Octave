@@ -86,7 +86,6 @@ fi
 rm -f "$STAGING_DIR/data/.cruise_intake_session.json"
 
 MOUNT_ARGS=(
-  -v "$STAGING_DIR/data:/data"
   -v "$STAGING_DIR/ladcp:/ladcp_data"
   -v "$STAGING_DIR/ctd:/ctd_data"
   -v "$STAGING_DIR/nav:/navigation_data"
@@ -99,7 +98,7 @@ if [ "$HAS_SADCP_MAT" = "true" ]; then
 fi
 
 echo "starting $IMAGE_TAG (serve mode) ..."
-CONTAINER_ID=$(docker run -d --rm -p 0:8080 "${MOUNT_ARGS[@]}" "$IMAGE_TAG")
+CONTAINER_ID=$(docker run -d --rm -p 0:8080 -v "$STAGING_DIR/data:/data" "${MOUNT_ARGS[@]}" "$IMAGE_TAG")
 cleanup() {
   docker stop "$CONTAINER_ID" >/dev/null 2>&1 || true
 }
@@ -219,7 +218,7 @@ docker stop "$CONTAINER_ID" >/dev/null
 trap - EXIT
 
 echo "running process_cast($STATION,1,0) ..."
-docker run --rm -v "$STAGING_DIR/data:/data" "$IMAGE_TAG" octave-cli --eval "process_cast($STATION,1,0)"
+docker run --rm -v "$STAGING_DIR/data:/data" "${MOUNT_ARGS[@]}" "$IMAGE_TAG" octave-cli --eval "process_cast($STATION,1,0)"
 
 echo "done."
 echo "saved state / diary base path: $STAGING_DIR/data/V7/$CAST_NAME (process_cast's own save/diary conventions determine the exact suffixes)"
