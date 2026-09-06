@@ -91,13 +91,14 @@ acknowledged. Implications for future work:
   `templates.TemplateResponse(request, "index.html")`'s newer
   positional-request-arg call raises `ValueError: context must include a
   "request" key` on every route that calls it (`test_help_route.py`'s two
-  tests, and in fact any page render). This machine also has no system
-  `python3.12` (Mint 21.3/Ubuntu-22.04-based; would need the deadsnakes
-  PPA), so `.venv312/` was bootstrapped from a small conda env instead:
-  `conda create -n ldeo-py312-bootstrap python=3.12`, then
-  `/home/peter_sha/anaconda3/envs/ldeo-py312-bootstrap/bin/python3.12 -m venv .venv312`.
-  **`.venv312/bin/python3.12` is a symlink into that conda env — don't
-  `conda env remove -n ldeo-py312-bootstrap`, it would break the venv.**
+  tests, and in fact any page render). This machine (Mint 21.3, an
+  Ubuntu-22.04/jammy base) had no system `python3.12` either, so the
+  deadsnakes PPA was added (`sudo add-apt-repository ppa:deadsnakes/ppa`)
+  to install a real one — Mint's `add-apt-repository` already resolves
+  the correct underlying Ubuntu series on its own via
+  `/etc/upstream-release/lsb-release`, so no manual series override was
+  needed. `.venv312/` is a plain venv built from
+  `/usr/bin/python3.12 -m venv .venv312`, no conda involved.
   `webapp/requirements.txt`'s full pinned set, `ctdam` included, installs
   cleanly under 3.12 (unlike under 3.10 — `ctdam`/`seabirdscientific`
   need Python ≥3.12, confirmed 2026-08-18 during the CTD quick-convert
