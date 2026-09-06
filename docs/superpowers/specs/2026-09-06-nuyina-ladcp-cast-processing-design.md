@@ -47,9 +47,12 @@ inputs.
   Phase 2) — no S3 fetch needed for this.
 - Driving mechanism: the webapp's FastAPI endpoints called directly (`curl`/a short script), not
   browser interaction. No new endpoints — every step below already exists in the shipped webapp.
-- Verification: an actual `process_cast(5, 1, 2)` run inside the Octave container (all 17 real
+- Verification: an actual `process_cast(5, 1, 0)` run inside the Octave container (all 17 real
   steps), followed by inspecting the real saved output for a genuine, non-empty velocity profile —
-  not just confirming `set_cast_params.m` is well-formed.
+  not just confirming `set_cast_params.m` is well-formed. (Corrected from an earlier draft's
+  `process_cast(5,1,2)`: `stop=2` never resets and pauses after every single step forever, which
+  hangs a non-interactive run — discovered the hard way during this plan's own execution; see
+  `.superpowers/sdd/2026-09-06-nuyina-ladcp-cast-processing/task-3-report.md`.)
 
 **Non-goals:** processing casts 004/006 in this pass; building any new S3-fetch script for this
 repo (CTD/nav are one-off `rclone` pulls into a local staging directory, not a persisted tool —
@@ -86,7 +89,7 @@ S3 (aadc-kingston)              nuyina_dev_env (local)         nuyina_uhdas_coda
         four real inputs above) → PUT nav column mapping
         → POST /api/generate → /data/set_cast_params.m
                             ▼
-        docker run ... octave-cli --eval "process_cast(5,1,2)"
+        docker run ... octave-cli --eval "process_cast(5,1,0)"
         (real 17-step pipeline, inside the same container)
                             ▼
         Inspect real saved output (per set_cast_params.m's
@@ -132,7 +135,7 @@ two consecutive days' files). Don't guess the date from the voyage's overall Jun
    at the real files from steps 4-6, then `POST /api/generate` — confirm `/data/set_cast_params.m`
    is written and, read back, actually references the real file paths (not empty/placeholder
    fields).
-8. `docker run --rm -v <staging>/data:/data ldeo-ix-octave octave-cli --eval "process_cast(5,1,2)"`
+8. `docker run --rm -v <staging>/data:/data ldeo-ix-octave octave-cli --eval "process_cast(5,1,0)"`
    — confirm it runs to completion without an Octave error, through all 17 steps.
 9. Inspect the real saved output (the file `set_cast_params.m`'s `f.res` field points at) — confirm
    it contains an actual, non-empty velocity profile (real u/v values across a real depth range),

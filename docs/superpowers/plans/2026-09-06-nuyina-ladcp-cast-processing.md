@@ -310,10 +310,18 @@ Expected: a 200 response, and the printed file contains real values — `f.ladcp
 - Consumes: `nuyina_data/202324050_005/data/set_cast_params.m` from Task 2, and the running `ladcp_005` container from Task 2.
 - Produces: nothing later tasks depend on — this is the last task in the plan.
 
-- [ ] **Step 1: Run `process_cast(5, 1, 2)` for real inside the container**
+- [ ] **Step 1: Run `process_cast(5, 1, 0)` for real inside the container**
+
+  (Corrected from an earlier draft's `process_cast(5,1,2)`: `stop=2` pauses
+  after **every** step forever with no auto-resume, not "stop after all
+  steps" as the docstring comment misleadingly suggests — this caused a real
+  11-minute stuck `keyboard()` busy-loop during this plan's own execution.
+  See `.superpowers/sdd/2026-09-06-nuyina-ladcp-cast-processing/task-3-report.md`
+  for the full story. `stop=0` is the correct value for an uninterrupted
+  non-interactive run.)
 
 ```bash
-docker exec -w /data ladcp_005 octave-cli --eval "process_cast(5,1,2)" 2>&1 | tee /tmp/process_cast_005_output.log
+docker exec -w /data ladcp_005 octave-cli --eval "process_cast(5,1,0)" 2>&1 | tee /tmp/process_cast_005_output.log
 ```
 
 Expected: real Octave output progressing through all 17 steps listed in `ldeo_ix/process_cast.m`'s docstring (`LOAD LADCP DATA` through `SAVE OUTPUT`), with no Octave error (`error:` prefix) anywhere in the output. Real LADCP/CTD/nav processing prints real diagnostic numbers as it goes (e.g. "read N CTD scans", fix counts, calibration stats) — a completely silent run, or one that stops partway with no explicit step-17 completion, is a failure to investigate, not something to treat as "probably fine."

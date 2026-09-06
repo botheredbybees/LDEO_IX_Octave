@@ -135,16 +135,19 @@ This drops you into `octave-cli` with `ldeo_ix/` and `stubs/` already on
 the path. Process a cast:
 
 ```octave
-process_cast(3)              % process station/cast 3
-process_cast(3, 1, 2)        % run all 17 steps without stopping
+process_cast(3)              % process station/cast 3, all 17 steps
+process_cast(3, 1, 0)        % same, explicit: stop=0 means "don't pause"
 ```
+
+`stop=2` pauses after **every** step awaiting an interactive `return` — it
+will hang a non-interactive `--eval` run, not run it to completion.
 
 See the docstring in `ldeo_ix/process_cast.m` for the full step list,
 checkpoint/resume behavior, and `begin_step`/`stop` arguments. You can also
 run a script non-interactively:
 
 ```bash
-docker run --rm -v "$(pwd)/my_cast:/data" ldeo-ix-octave octave-cli --eval "process_cast(3,1,2)"
+docker run --rm -v "$(pwd)/my_cast:/data" ldeo-ix-octave octave-cli --eval "process_cast(3,1,0)"
 ```
 
 ## Why Octave instead of MATLAB
