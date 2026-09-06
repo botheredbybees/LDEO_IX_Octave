@@ -160,6 +160,18 @@ source-compatible; the patches in `CHANGES.md` close the small remaining
 gaps (a couple of reserved-keyword collisions, one missing builtin, and
 headless plotting).
 
+## Magnetic declination via `ppigrf`
+
+This image includes a real `magdec` command-line tool (implemented in Python
+via the `ppigrf` library, which provides IGRF-14 magnetic field calculations)
+because the original tool's distribution is currently unreachable. This
+matters because `loadnav.m` expects to call `magdec` to fetch accurate
+magnetic declination for each cast's position and date — if the tool isn't
+found, the pipeline silently falls back to a hardcoded 1999/2000-vintage
+magnetic model, resulting in systematically inaccurate current profiles. With
+the tool in place, every cast gets the proper IGRF-14 declination for its
+actual survey location and date.
+
 ## License
 
 The packaging (Dockerfile, `stubs/`, documentation) is MIT-licensed — see

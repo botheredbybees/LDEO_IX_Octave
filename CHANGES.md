@@ -106,6 +106,20 @@ None of these stubs change any numerical result — they only silence a
 diagnostic-plotting subsystem that needs a display MATLAB would have and
 this headless image doesn't.
 
+## External tools added
+
+**`magdec` command** (`/usr/local/bin/magdec`, implemented as `magdec/magdec.py`) — a
+real magnetic-declination calculator backed by `ppigrf` (IGRF-14), installed in
+the Docker image to provide the tool that `loadnav.m` expects. Without it, the
+pipeline silently fell back to a hardcoded year-2000 magnetic model (from the
+`magdev()` function) for every cast, resulting in inaccurate current profiles.
+Verified live on 2026-09-06 by re-running real Nuyina LADCP cast 005 (station
+5, 2024-06-17): the real `geomag()` branch in unmodified `ldeo_ix/loadnav.m`
+picked up the new tool, reporting `corrected for magnetic declination of 15.9
+deg`, and the processed output `p.drot = 15.890600` matched the expected IGRF-14
+declination — clearly different from the old fallback value `15.057159` that
+had been observed identically across all three test casts prior to the fix.
+
 ## Version note
 
 `ldeo_ix/default.m` reports `Version IX_14beta`. This is the upstream

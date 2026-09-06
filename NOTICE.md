@@ -37,12 +37,15 @@ packaging work and is licensed under the MIT License — see `LICENSE`.
 this project to allow headless execution (see `CHANGES.md`); they are
 licensed under the same MIT terms.
 
-## Quick-convert dependencies
+## Third-party Python dependencies
+
+The image includes two categories of third-party Python dependencies, both
+installed via pip and not vendored:
+
+### Quick-convert (CTD processing)
 
 The webapp's "Quick-convert (unvalidated)" CTD fallback (see
-`webapp/quick_convert.py`) uses two third-party Python packages, both
-with clear, permissive-enough licenses (unlike `ldeo_ix/` above, neither
-is a redistribution-status question):
+`webapp/quick_convert.py`) uses:
 
 - [`ctdam`](https://github.com/DAM-CTD-Software/ctdam) — GPLv3. Used as
   a normal Python dependency (installed via pip, not modified or
@@ -51,3 +54,13 @@ is a redistribution-status question):
   MIT. Sea-Bird Scientific's own official community toolkit; `ctdam`
   depends on it for the actual hex-decoding/calibration math. Pulled in
   transitively via `ctdam`, not a direct dependency of this repo.
+
+### Magnetic declination (`magdec` tool)
+
+The `magdec` command-line tool (see `magdec/magdec.py`) uses:
+
+- [`ppigrf`](https://github.com/iaga-vmod/ppigrf) — MIT. The Python
+  port of the IGRF-14 (International Geomagnetic Reference Field)
+  magnetic model, maintained by IAGA-VMOD. Provides the actual
+  magnetic-declination calculations that `loadnav.m` expects from the
+  `magdec` tool.
