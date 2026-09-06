@@ -310,6 +310,27 @@ session with the fixes in place:
   `p.drot` is not numerically equivalent to letting the pipeline compute the
   same value itself — a real gotcha for anyone using that override on
   another cast.
+- **Which of the two numbers above is the "real" one is not actually
+  ambiguous — Andreas Thurnherr's own official user manual settles it.**
+  Per [`LDEO_IX.pdf`](https://www.ldeo.columbia.edu/~ant/UserManuals/LDEO_IX.pdf)
+  (Version IX.14, the exact version this repo packages), p.10: "Once GPS
+  time-series data are included in processing it is important that the
+  magnetic declination (`p.drot`, or `p.poss` and `p.pose`) are **not set
+  manually**... the magnetic declination is calculated before the GPS data
+  are loaded!" The manual's manual-`p.drot`/`magdev()` guidance (p.3-4) is
+  explicitly framed as a first-pass shortcut for when no real GPS stream
+  exists yet: "for final processing it is always preferable to use a GPS
+  data stream... which obviates the need to set p.poss, p.pose or p.drot."
+  Cast 005 has real GPS navigation (the 86,178 real GNGGA fixes) — so per
+  Andreas's own documented convention, the task-4 real fixed-pipeline run
+  (`u=[-0.072, 0.166]`, `p.drot` left to compute automatically) is the one
+  that follows correct practice, not task 3's `eval_expr`-supplied
+  workaround. Treat `u=[-0.072, 0.166]` as the result, not "one of two
+  equally valid numbers." (`examples/set_cast_params_P16N_example.m`'s own
+  hardcoded `p.drot` looked like a counter-example at first glance, but that
+  cast's `f.nav` is set to the same file as its `f.ctd` — a plausible sign
+  it never had genuine independent GPS fixes, i.e. not actually a
+  counter-example to the manual's GPS-data rule.)
 
 ## Where the full detail lives (not pushed, local only)
 
