@@ -19,7 +19,6 @@ needs its own equivalent rather than reusing this one verbatim.
 """
 import argparse
 import csv
-import sys
 from datetime import datetime, timezone
 
 

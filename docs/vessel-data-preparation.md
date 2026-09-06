@@ -14,7 +14,7 @@ Create a directory (anywhere on disk) with these subdirectories:
 | `ctd/` | `/ctd_data` (read-only) | Raw Sea-Bird `.hex`+`.XMLCON`, or an already-converted file (see CTD below) |
 | `nav/` | `/navigation_data` (read-only) | Your prepared nav table (see Navigation below) |
 | `ladcp/` | `/ladcp_data` (read-only) | The cast's raw LADCP down/up files |
-| `data/` | `/data` (read-write) | Starts empty; becomes the working directory |
+| `data/` | `/data` (read-write) | Starts empty (or holds a pre-converted CTD/SADCP file you copied in yourself — see CTD/SADCP sections below); becomes the working directory |
 | `codas/` | `/codas_data` (read-only, optional) | A CODAS `contour/` directory, if you want SADCP-convert to run |
 | `sadcp/` | `/sadcp_data` (read-only, optional) | An already-converted SADCP `.mat`, if you have one and want to skip SADCP-convert |
 
@@ -57,6 +57,13 @@ table, one row per fix, no header. Columns are, in order: `elapsed_seconds`, `la
 
 `elapsed_seconds` must be relative to the same cast start time you put in `time_start`.
 Latitude/longitude must already be in decimal degrees (not NMEA `ddmm.mmmm`).
+
+Keep your nav table scoped to roughly the cast's own duration, not much more. When `drot` isn't
+set manually (the normal case — see "Magnetic declination" below), `loadnav.m` computes magnetic
+declination from the median position of the *entire* nav table it's given, not a cast-specific
+time window, so a table covering a whole day or a long transit can pull the computed declination
+away from the cast's real position. Fetch/prep scripts that pull only the cast's own day (plus the
+next day's file too, for a cast that straddles midnight) are already about right.
 
 Whatever format your vessel's nav logging actually produces — NMEA sentences, a CSV export, a
 proprietary logger dump — you need a small one-off script that reads it and writes this table.

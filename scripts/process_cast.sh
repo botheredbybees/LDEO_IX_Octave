@@ -58,6 +58,10 @@ if [ "$HAS_CTD_HEX" != "true" ] && [ "$HAS_CTD_CNV" != "true" ]; then
   echo "error: cast config must provide either (ctd_hex AND ctd_xmlcon) or ctd_cnv" >&2
   exit 1
 fi
+if [ "$HAS_CTD_HEX" = "true" ] && [ "$HAS_CTD_XMLCON" = "true" ] && [ "$HAS_CTD_CNV" = "true" ]; then
+  echo "error: cast config sets both (ctd_hex AND ctd_xmlcon) and ctd_cnv -- only one CTD source is allowed" >&2
+  exit 1
+fi
 
 HAS_SADCP_CONTOUR=$(jq -r 'has("sadcp_contour_dir")' "$CONFIG_FILE")
 HAS_SADCP_MAT=$(jq -r 'has("sadcp_mat_path")' "$CONFIG_FILE")
@@ -86,15 +90,15 @@ fi
 rm -f "$STAGING_DIR/data/.cruise_intake_session.json"
 
 MOUNT_ARGS=(
-  -v "$STAGING_DIR/ladcp:/ladcp_data"
-  -v "$STAGING_DIR/ctd:/ctd_data"
-  -v "$STAGING_DIR/nav:/navigation_data"
+  -v "$STAGING_DIR/ladcp:/ladcp_data:ro"
+  -v "$STAGING_DIR/ctd:/ctd_data:ro"
+  -v "$STAGING_DIR/nav:/navigation_data:ro"
 )
 if [ "$HAS_SADCP_CONTOUR" = "true" ]; then
-  MOUNT_ARGS+=(-v "$STAGING_DIR/codas:/codas_data")
+  MOUNT_ARGS+=(-v "$STAGING_DIR/codas:/codas_data:ro")
 fi
 if [ "$HAS_SADCP_MAT" = "true" ]; then
-  MOUNT_ARGS+=(-v "$STAGING_DIR/sadcp:/sadcp_data")
+  MOUNT_ARGS+=(-v "$STAGING_DIR/sadcp:/sadcp_data:ro")
 fi
 
 echo "starting $IMAGE_TAG (serve mode) ..."
@@ -104,7 +108,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-HOST_PORT=$(docker port "$CONTAINER_ID" 8080/tcp | head -n1 | cut -d: -f2)
+HOST_PORT=$(docker port "$CONTAINER_ID" 8080/tcp | head -n1 | awk -F: '{print $NF}')
 BASE_URL="http://localhost:${HOST_PORT}"
 
 echo "waiting for $BASE_URL/health ..."
@@ -221,4 +225,9 @@ echo "running process_cast($STATION,1,0) ..."
 docker run --rm -v "$STAGING_DIR/data:/data" "${MOUNT_ARGS[@]}" "$IMAGE_TAG" octave-cli --eval "process_cast($STATION,1,0)"
 
 echo "done."
-echo "saved state / diary base path: $STAGING_DIR/data/V7/$CAST_NAME (process_cast's own save/diary conventions determine the exact suffixes)"
+OUTPUT_MAT="$STAGING_DIR/data/V7/$CAST_NAME.mat"
+if [ -f "$OUTPUT_MAT" ]; then
+  echo "output: $STAGING_DIR/data/V7/$CAST_NAME.{mat,log,txt}"
+else
+  echo "warning: process_cast exited 0 but expected output $OUTPUT_MAT was not found -- check the log above" >&2
+fi
