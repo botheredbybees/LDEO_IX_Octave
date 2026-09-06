@@ -100,7 +100,10 @@ data is loaded, magnetic declination must be left to compute naturally in `proce
 processing step 3 — supplying it manually changes the timing of a bottom-track quality-control
 threshold and produces a materially different, incorrect solution. If your instrument's own
 software reports a declination value, don't put it in your cast-config.json; the pipeline
-computes its own from your real nav data.
+computes its own from your real nav data. See the main `README.md`'s "Magnetic declination via
+`ppigrf`" section for what that computation actually is — a real, position-dependent IGRF-14
+lookup, not a placeholder — which is exactly why getting the nav-table window right (above)
+matters more than it used to.
 
 ## Pre-flight validation — the script fails fast with clear errors
 

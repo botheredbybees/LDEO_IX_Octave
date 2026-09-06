@@ -13,9 +13,18 @@ docs/superpowers/specs/2026-09-06-magdec-replacement-design.md):
   tool at all -- print usage, exit 1.
 - five arguments (lon lat year month day): print
   "declination inclination horizontal_intensity total_intensity",
-  space-separated, one line, exit 0. Only the first value (declination)
-  is actually read by loadnav.m; the rest exist for output-shape parity
-  with the original tool.
+  space-separated, one line -- exactly four values (`loadnav.m` errors on
+  any other count: it does `if length(vals) ~= 4`) -- exit 0. Only the
+  first value (declination) is actually read by loadnav.m; the rest exist
+  for output-shape parity with the original tool.
+
+Note on failure behavior: `ppigrf` is only imported inside compute(), not at
+module load time, so the zero-arg existence probe above always succeeds even
+if `ppigrf` is broken or missing -- but a real five-arg call will then raise
+an uncaught exception and abort the whole cast, rather than silently letting
+loadnav.m fall back to its old year-2000 magdev() model. This is deliberate:
+failing loudly beats silently reverting to bad science. Do not "fix" this by
+wrapping compute() in a try/except that restores the silent fallback.
 """
 import math
 import sys
@@ -44,6 +53,9 @@ def compute(lon: float, lat: float, year: int, month: int, day: int) -> tuple:
 
 
 def main(argv) -> int:
+    # Hand-rolled check, not argparse: argparse would misparse a negative
+    # latitude/longitude (e.g. "-42.559128") as an option flag rather than
+    # a positional value.
     if len(argv) != 5:
         print("usage: magdec <lon> <lat> <year> <month> <day>", file=sys.stderr)
         return 1

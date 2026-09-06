@@ -71,7 +71,12 @@ of MATLAB. Every change is listed here; nothing else was touched.
    file, not a missing `geomag.m`, so it resolves fine; it would still fail
    in this image, but via `geomag`'s own `error(['cannot execute <' CMD
    '>'])` when it re-invokes the missing `magdec` binary, not via an
-   undefined-function/undefined-field error.)
+   undefined-function/undefined-field error.) **No longer true as of the
+   `magdec` tool added below** (see "External tools added") — this image now
+   ships a real `magdec` binary, so both "this Docker image ships no
+   `magdec` binary" above and the "via `geomag`'s own `error(...)` when it
+   re-invokes the missing `magdec` binary" description just above describe
+   the pre-fix state only, not the current one.
 
 ## Upstream contact
 
