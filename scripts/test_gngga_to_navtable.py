@@ -74,6 +74,57 @@ def test_cli_requires_cast_start_flag(tmp_path):
     assert "--cast-start" in result.stderr
 
 
+def test_convert_without_window_hours_keeps_every_row(tmp_path):
+    csv_path = tmp_path / "GNGGA_2024-06-17.csv"
+    csv_path.write_text(FIXTURE_CSV)
+    out_path = tmp_path / "out.navtable"
+    cast_start = datetime(2024, 6, 17, 0, 44, 58, tzinfo=timezone.utc)
+
+    rows_written = convert(str(csv_path), str(out_path), cast_start)
+
+    assert rows_written == 2
+
+
+def test_convert_windows_rows_to_within_window_hours_of_cast_start(tmp_path):
+    csv_path = tmp_path / "GNGGA_2024-06-17.csv"
+    header = FIXTURE_CSV.splitlines()[0]
+    row_template = (
+        "{ts},$GNGGA,004458.00,4233.6601,S,14829.5473,E,1,14,0.7,35.3,M,-4.7,M,,"
+    )
+    cast_start = datetime(2024, 6, 17, 3, 0, 0, tzinfo=timezone.utc)
+    rows = [
+        row_template.format(ts="2024-06-16T22:00:00.000000Z"),  # -5h, outside
+        row_template.format(ts="2024-06-17T02:00:00.000000Z"),  # -1h, inside
+        row_template.format(ts="2024-06-17T03:00:00.000000Z"),  # 0h, inside
+        row_template.format(ts="2024-06-17T04:00:00.000000Z"),  # +1h, inside
+        row_template.format(ts="2024-06-17T08:00:00.000000Z"),  # +5h, outside
+    ]
+    csv_path.write_text(header + "\n" + "\n".join(rows) + "\n")
+    out_path = tmp_path / "out.navtable"
+
+    rows_written = convert(str(csv_path), str(out_path), cast_start, window_hours=2)
+
+    assert rows_written == 3
+    elapsed_values = [float(line.split()[0]) for line in out_path.read_text().splitlines()]
+    assert elapsed_values == [-3600.0, 0.0, 3600.0]
+
+
+def test_cli_accepts_window_hours_flag(tmp_path):
+    csv_path = tmp_path / "GNGGA_2024-06-17.csv"
+    csv_path.write_text(FIXTURE_CSV)
+    out_path = tmp_path / "out.navtable"
+
+    script = Path(__file__).resolve().parent / "gngga_to_navtable.py"
+    result = subprocess.run(
+        [sys.executable, str(script), str(csv_path), str(out_path),
+         "--cast-start", "2024-06-17T00:44:58Z", "--window-hours", "2"],
+        capture_output=True, text=True,
+    )
+
+    assert result.returncode == 0
+    assert "wrote 2 rows" in result.stdout
+
+
 def test_cli_writes_navtable_when_cast_start_given(tmp_path):
     csv_path = tmp_path / "GNGGA_2024-06-17.csv"
     csv_path.write_text(FIXTURE_CSV)
