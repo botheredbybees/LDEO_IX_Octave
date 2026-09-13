@@ -761,7 +761,12 @@ dproblem(i) = dproblem(i) + 10000;
 i = find( isnan(veld(:,:,1)) );
 dproblem(i) = dproblem(i) + 100000;
 
-if sum(isfinite(btd(:)))>0
+% NDO-786: bottom track only makes physical sense from a down-looking instrument -- it tracks
+% the seafloor below. Previously accepted as valid whenever any finite value was present,
+% regardless of orientation: an up-looking instrument (dd.Up, from rditype(fdown) above) has no
+% seafloor in view, so whatever the do-file reports as "bottom track" there is not a real
+% seafloor-referenced velocity and must not be fed into the inverse solve as if it were.
+if sum(isfinite(btd(:)))>0 && dd.Up==0
  l.btrk_used = 1;
 else
  l.btrk_used = 0;

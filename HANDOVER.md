@@ -346,3 +346,56 @@ the workaround-vs-real-run `u`/`v` discrepancy). If you need the full raw
 diagnostic output (LADCP QC counts, bottom-track stats, the
 `GETINV`/`CHECKINV` numbers), it's all there — this handover only carries
 the summary since those files don't survive outside this one clone.
+
+# Handover — 2026-09-13 session
+
+## TL;DR
+
+Single targeted fix from a 2026-09-12 workspace-wide code review (NDO-786):
+`loadrdi.m`'s bottom-track validity check accepted BT data from an
+up-looking instrument as valid, since it only checked for finite values,
+never orientation. See `CHANGES.md` entry 7 for the full technical
+writeup. No design spec/plan for this one — small enough to fix directly.
+
+## Verification
+
+Rebuilt the image (`docker build -t ldeo-ix-octave:local .`) and ran two
+checks against it:
+
+1. Confirmed the patched line is actually in the built image (`fread` the
+   file at `which('loadrdi')` inside the container, grep for `dd.Up==0`).
+2. Ran the full real 17-step pipeline against a genuine dual-head Nuyina
+   cast already staged locally (`nuyina_data/202324050_005/`, the same
+   cast used for the 2026-09-06 session's fixes) —
+   `process_cast(5,1,0)` completed in 75s with no new errors, only the
+   same pre-existing benign Octave-vs-MATLAB warnings this repo's other
+   fixes have already characterised. Separately confirmed `dd.Up == 0`
+   for this cast's real down-file (`rditype()` called directly), so the
+   new condition evaluates true and `l.btrk_used` behaves identically to
+   before for this normal, correctly-oriented cast — no regression.
+
+**Not possible to verify directly:** there's no genuine UL-only sample
+cast locally to positively demonstrate the fix actually *changing*
+behaviour (rejecting BT data it would previously have accepted). The
+fix's correctness rests on the code's own established `.Up` field
+convention (already used identically at `loadrdi.m:153,174` to detect
+mounting-orientation mismatches) plus the review's precise description of
+the bug, not a before/after diff against a triggering real cast.
+
+## The broader "re-diff against current upstream" ask — not attempted
+
+The same review flagged that this repo's packaged `loadnav.m`/`loadrdi.m`
+baseline (2016/2018 vintage) may be missing other upstream fixes beyond
+the one specific 2024-06-25 fix ported here, and asked for a full re-diff
+against current upstream. Looked for a live current source: web search
+turned up `www.ldeo.columbia.edu/cgi-bin/ladcp-cgi-bin/hgweb.cgi`, Andreas
+Thurnherr's own Mercurial hosting for this exact project — but every path
+tried against it returned a 500 Internal Server Error (the server itself
+is broken, not a wrong URL). The `athurnherr/LDEO_IX` GitHub mirror the
+sibling `LDEO_IX` checkout already tracks as `upstream` is frozen at the
+same "cleaned up for gitHub release" commit this image was built from
+(`git fetch upstream` found nothing new) — not actually "current" in the
+sense the review meant. A genuine re-diff needs either that CGI server
+coming back or direct contact with Thurnherr, who's already a known,
+responsive contact from the 2026-09-03/04 exchange documented in
+`CHANGES.md`'s "Upstream contact" section.

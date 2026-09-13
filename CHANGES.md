@@ -78,6 +78,35 @@ of MATLAB. Every change is listed here; nothing else was touched.
    re-invokes the missing `magdec` binary" description just above describe
    the pre-fix state only, not the current one.
 
+7. **`loadrdi.m`** (NDO-786, 2026-09-13): `l.btrk_used` (around line 764) was set to `1`
+   whenever any finite bottom-track value was present in the RDI file, with no check on
+   whether the primary/down instrument (`dd`, from `rditype(fdown)` a few lines above) is
+   actually down-looking. Bottom track only makes physical sense from a down-looking
+   instrument -- it tracks the seafloor below. For a UL-only cast (or any do-file that's
+   actually up-looking, `dd.Up==1`), whatever the file reports as "bottom track" has no
+   seafloor in view and is not a real seafloor-referenced velocity -- previously fed into
+   the inverse solve as if it were valid, silently "good" bad data. Found in a 2026-09-12
+   workspace code review; current upstream LDEO_IX (per that review) has an equivalent fix
+   dated 2024-06-25. Fixed by requiring `dd.Up==0` alongside the existing finite-value check.
+   Reused the `dd` struct already computed at line ~708 (`[dummy,dd]=rditype(fdown);`) for
+   the beam-coordinate check just above -- no new `rditype()` call needed, `dd` doesn't
+   change in between. Verified by rebuilding this image and running a real cast: see the
+   HANDOVER.md entry for this fix's live-verification detail.
+
+   **Not attempted, flagged instead:** the review also raised a broader concern -- the
+   packaged `loadnav.m`/`loadrdi.m` baseline is 2016/2018 vintage vs upstream's 2020/2024, so
+   this file's own "complete, authoritative patch list" framing may not hold if other undated
+   upstream fixes are missing. A genuine re-diff against current upstream needs a real current
+   source; the only one found (`ldeo.columbia.edu`'s own hgweb Mercurial CGI, discovered via
+   web search) returned a 500 Internal Server Error on every path tried, and the
+   `athurnherr/LDEO_IX` GitHub mirror this repo's sibling `LDEO_IX` checkout tracks as
+   `upstream` is itself frozen at the same "cleaned up for gitHub release" commit this image
+   was already built from -- confirmed via `git fetch upstream` finding nothing new. This
+   specific fix (`db.Up` check) was actionable from the review's own precise description
+   without needing that source; a full re-diff is not, and would need either that server
+   coming back or direct contact with Andreas Thurnherr (see "Upstream contact" below -- he's
+   already a known, responsive contact from a prior round of this exact kind of fix).
+
 ## Upstream contact
 
 The `loadnav.m` (`nav_time_base`) and `loadrdi.m` (`drv`) bugs above were
