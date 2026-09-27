@@ -21,16 +21,19 @@ purpose runnable image only. Don't assume that harness exists or try to
 recreate it here; if the user wants that comparison tooling, it lives in the
 other project.
 
-## Repository status (as of 2026-07-15)
+## Repository status (as of 2026-09-10)
 
-- Git-initialized locally, one commit, **no remote configured yet**.
-- Docker image builds and has been smoke-tested locally
+- Public on GitHub: `github.com/botheredbybees/LDEO_IX_Octave`. Not yet
+  published to Docker Hub — the image is built locally / in CI, not pulled
+  from a registry.
+- Actively used and extended well beyond the original Octave-compatibility
+  patch set: a FastAPI web intake form (`webapp/`), a `magdec` CLI
+  replacement (`magdec/`), a generic `scripts/process_cast.sh` driver, and
+  real fixes from processing actual Nuyina LADCP casts (see `HANDOVER.md`
+  for the most recent real-cast fix history).
+- Docker image builds and has been smoke-tested
   (`docker build -t ldeo-ix-octave:local .`; ran `default.m` inside the
   container and confirmed it executes real LDEO_IX M-code under Octave).
-- **Not yet pushed to GitHub or Docker Hub.** The user chose to prepare
-  everything locally and review before publishing (this is going public, per
-  the user's explicit choice — see Licensing below). Don't push either
-  without the user's explicit go-ahead in that session.
 
 ## Licensing — read `NOTICE.md` before touching anything redistribution-related
 
