@@ -210,6 +210,13 @@ d.rv(ii)=nan;
   if ~isfinite(btmi)
       btmi = fix(median(find(isfinite(l.ru_err(end,:)))));
   end
+% Octave-port patch (see CHANGES.md): when the deepest output row has no valid data in either
+% field (e.g. a ~4.5 km cast), btmi is still NaN and the diagnostic plot calls below fail on
+% the NaN subscript. btmi is only used to split down-/up-cast in those diagnostic plots, so
+% fall back to the midpoint of the super-ensembles.
+  if ~isfinite(btmi)
+      btmi = max(1, fix(lt/2));
+  end
 
 % define color map
    if ps.fig3_colormap == 2

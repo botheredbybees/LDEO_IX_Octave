@@ -107,6 +107,18 @@ of MATLAB. Every change is listed here; nothing else was touched.
    coming back or direct contact with Andreas Thurnherr (see "Upstream contact" below -- he's
    already a known, responsive contact from a prior round of this exact kind of fix).
 
+8. **`geterr.m`** (2026-10-15, found processing a ~4.5 km cast, voyage 202425030 cast 104): inside the
+   `if iplot` diagnostic-figure block, `btmi` (the super-ensemble index that splits down- from
+   up-cast in the error plots) is computed from the last row of `l.u_oce`, with an upstream fallback
+   (Dec 2017, P6 station 94) to the last row of `l.ru_err`. For a very deep cast both rows are
+   entirely NaN, `btmi` stays NaN, and `l.ru_err(:,1:btmi)` dies with
+   `error: l(_,nan): subscripts must be either integers 1 to (2^63)-1 or logicals`, aborting the
+   whole run after the inversion had already completed. Added a third fallback,
+   `btmi = max(1, fix(lt/2))` (midpoint of the super-ensembles). `btmi` is used only in the
+   diagnostic plot calls below it (which are no-op stubs in this image), so results are unaffected;
+   the same code path ran, unmodified, for all other casts of that voyage. Same style as the
+   2017 upstream fix.
+
 ## Upstream contact
 
 The `loadnav.m` (`nav_time_base`) and `loadrdi.m` (`drv`) bugs above were
