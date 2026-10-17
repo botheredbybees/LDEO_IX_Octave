@@ -399,3 +399,25 @@ sense the review meant. A genuine re-diff needs either that CGI server
 coming back or direct contact with Thurnherr, who's already a known,
 responsive contact from the 2026-09-03/04 exchange documented in
 `CHANGES.md`'s "Upstream contact" section.
+
+## 2026-10-17: down-looker-only casts (934b610) and the other AAD voyages
+
+`webapp/validation.py` no longer requires `ladcpup`: a cast with only a
+down-looker file is accepted and the generated `set_cast_params.m` sets
+`f.ladcpup = ''`, which LDEO_IX already handles (down-only inversion).
+Tests cover both the validation and the template (109 pass). Built as the
+overlay image `ldeo-ix-octave:ix-934b610` (FROM `ix-010a871`, copying only
+the one file). First real use: Nuyina voyage 202324060 cast 5, whose
+archived up-looker file turned out to be a byte-identical copy of cast
+6's (PD0 ensemble clocks: 7 Jul, not 3 Jul). Lesson for any intake: the
+file name is not evidence of which deployment a PD0 file came from; the
+variable-leader RTC is.
+
+AAD-local, gitignored, unchanged in git: `nuyina_data/scripts/
+process_voyage_casts.py` (per-voyage driver: whole-cast CTD from the raw
+hex with by-name column stitching for a restarted cast, eLog seabed depth
+as `p.zbottom`, shipboard ADCP contour where one covers the cast,
+`p.ctdmaxlag` override for a cast whose CTD/LADCP lag exceeds the 150-scan
+default), `build_voyage_report.py`, `build_dmv_package.py`,
+`package_voyage.sh`. Packages for 202324050 (casts 4-6) and 202324060
+(casts 3-6) are delivered; see the Nuyina workspace handover for where.
