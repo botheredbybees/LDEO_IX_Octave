@@ -173,3 +173,12 @@ def test_missing_sadcp_converted_file_warns_about_data_mount_not_sadcp_mount(tmp
 
     assert result.is_valid is True
     assert "sadcp_convert/os150nb.SADCP.mat not found under data mount" in result.warnings[cast.id]
+
+
+def test_empty_ladcpup_is_a_down_only_cast_not_an_error():
+    # LDEO_IX runs a down-looker-only cast when f.ladcpup is '' (loadrdi.m updown); the intake
+    # must not insist on an up-looker file.
+    session = CruiseSession(cruise_id="x", casts=[_valid_cast(ladcpup="")])
+    result = validation.validate_session(session)
+    assert result.is_valid
+    assert "ladcpup is required" not in str(result.errors)

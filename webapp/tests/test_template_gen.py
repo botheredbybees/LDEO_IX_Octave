@@ -142,3 +142,12 @@ def test_unset_optional_fields_are_omitted_not_rendered_as_none():
     assert "None" not in output
     assert "f.ctd_header_lines" not in output
     assert "p.drot" not in output
+
+
+def test_empty_ladcpup_renders_as_empty_string_for_a_down_only_cast(monkeypatch):
+    # loadrdi.m treats f.ladcpup = '' (or ' ') as "no up-looking instrument".
+    cast = _p16n_cast003()
+    cast.ladcpup = ""
+    session = CruiseSession(cruise_id="x", casts=[cast])
+    output = template_gen.render_set_cast_params(session)
+    assert "f.ladcpup = '';" in output

@@ -3,8 +3,10 @@ from dataclasses import dataclass, field
 from webapp import config, paths, quick_convert, sadcp_convert
 from webapp.models import CruiseSession
 
+# ladcpup is optional: LDEO_IX processes a down-looker-only cast when f.ladcpup is '' or ' '
+# (loadrdi.m's updown), so an empty ladcpup means "no up-looking instrument", not an error.
 REQUIRED_FIELDS = [
-    "ladcpdo", "ladcpup", "ladcp_station", "ladcp_cast",
+    "ladcpdo", "ladcp_station", "ladcp_cast",
     "lat", "lon", "time_start", "time_end",
 ]
 
