@@ -424,7 +424,7 @@ default), `build_voyage_report.py`, `build_dmv_package.py`,
 
 # Handover — 2026-10-30: rebase onto upstream IX_15 (NDO-1116)
 
-Branch `ndo-1116-rebase-ix15` (not merged, not pushed when this was written).
+Branch `ndo-1116-rebase-ix15`, merged into master on 2026-10-30.
 
 ## What changed
 - `ldeo_ix/` is now upstream IX_15 (`athurnherr/LDEO_IX` commit `ecfda32`), not the IX_14beta snapshot. The patches on top
@@ -456,6 +456,6 @@ Seven Nuyina casts (202324050 casts 004 to 006, 202324060 casts 003 to 006) on o
 The Investigator IN2021_V04 test cast cannot be used: the navigation in `test_data` does not cover its time.
 
 ## Open
-- Review, then merge and push.
+- Cast 001 of IN2019_V05 could not be reproduced and cast 016's 2019 inputs were rewritten afterwards; see CHANGES.md.
 - Confluence Installation and Maintenance pages updated 2026-10-30; the Dev Log needs an entry if this is merged.
 - Reply to Andreas Thurnherr sent 2026-10-30 (NDO-642).
