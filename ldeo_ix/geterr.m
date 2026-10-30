@@ -1,9 +1,9 @@
 %======================================================================
 %                    G E T E R R . M 
 %                    doc: Wed Jun 30 23:24:51 2004
-%                    dlm: Thu Dec  7 09:50:52 2017
+%                    dlm: Mon Jan 27 19:42:27 2020
 %                    (c) 2004 ladcp@
-%                    uE-Info: 23 47 NIL 0 0 72 0 2 8 NIL ofnI
+%                    uE-Info: 25 73 NIL 0 0 72 0 2 8 NIL ofnI
 %======================================================================
 
 % MODIFICATIONS BY ANT:
@@ -21,6 +21,9 @@
 %  Jan 28, 2015: - BUG: figure legend typo
 %  Dec  7, 2017: - BUG: btmi was set to nan for P6 station 94; fixed with
 %			symptomatic work-around
+%  Jan 27, 2020: - BUG: btmi was set to nan for JR195 stations 20 and 30;
+%			fixed by skipping sub-plots if btmi is not finite
+
 
 function l=geterr(ps,dr,d,iplot)
 % function l=geterr(dr,d,iplot)
@@ -210,13 +213,6 @@ d.rv(ii)=nan;
   if ~isfinite(btmi)
       btmi = fix(median(find(isfinite(l.ru_err(end,:)))));
   end
-% Octave-port patch (see CHANGES.md): when the deepest output row has no valid data in either
-% field (e.g. a ~4.5 km cast), btmi is still NaN and the diagnostic plot calls below fail on
-% the NaN subscript. btmi is only used to split down-/up-cast in those diagnostic plots, so
-% fall back to the midpoint of the super-ensembles.
-  if ~isfinite(btmi)
-      btmi = max(1, fix(lt/2));
-  end
 
 % define color map
    if ps.fig3_colormap == 2
@@ -256,12 +252,14 @@ d.rv(ii)=nan;
    title(sprintf('U-err std: %.03f',meannan(stdnan(l.ru_err'))))
    
    subplot(232)
-   if ps.fig3_avgerr == 2
-     plot(medianan(l.ru_err(:,1:btmi)')',-ib,'r',medianan(l.ru_err(:,btmi:end)')',-ib,'b');
-     title('median(U-err) [r/b: down-/up-cast]')
-   else
-     plot(meanan(l.ru_err(:,1:btmi)')',-ib,'r',meanan(l.ru_err(:,btmi:end)')',-ib,'b');
-     title('mean(U-err) [r/b: down-/up-cast]')
+   if isfinite(btmi)
+     if ps.fig3_avgerr == 2
+       plot(medianan(l.ru_err(:,1:btmi)')',-ib,'r',medianan(l.ru_err(:,btmi:end)')',-ib,'b');
+       title('median(U-err) [r/b: down-/up-cast]')
+     else
+       plot(meanan(l.ru_err(:,1:btmi)')',-ib,'r',meanan(l.ru_err(:,btmi:end)')',-ib,'b');
+       title('mean(U-err) [r/b: down-/up-cast]')
+     end
    end
    set(gca,'XLim',[-0.05 0.05]);
    set(gca,'Ylim',[-ib(end) -ib(1)]);
@@ -322,12 +320,14 @@ d.rv(ii)=nan;
    title(sprintf('V-err std: %.03f',meannan(stdnan(l.rv_err'))))
    
    subplot(235)
-   if ps.fig3_avgerr == 2
-     plot(medianan(l.rv_err(:,1:btmi)')',-ib,'r',medianan(l.rv_err(:,btmi:end)')',-ib,'b');
-     title('median(V-err) [r/b: down-/up-cast]')
-   else
-     plot(meanan(l.rv_err(:,1:btmi)')',-ib,'r',meanan(l.rv_err(:,btmi:end)')',-ib,'b');
-     title('mean(V-err) [r/b: down-/up-cast]')
+   if isfinite(btmi)
+     if ps.fig3_avgerr == 2
+       plot(medianan(l.rv_err(:,1:btmi)')',-ib,'r',medianan(l.rv_err(:,btmi:end)')',-ib,'b');
+       title('median(V-err) [r/b: down-/up-cast]')
+     else
+       plot(meanan(l.rv_err(:,1:btmi)')',-ib,'r',meanan(l.rv_err(:,btmi:end)')',-ib,'b');
+       title('mean(V-err) [r/b: down-/up-cast]')
+     end
    end
    set(gca,'XLim',[-0.05 0.05]);
    set(gca,'Ylim',[-ib(end) -ib(1)]);

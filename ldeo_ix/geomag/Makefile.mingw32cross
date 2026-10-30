@@ -1,0 +1,18 @@
+# For using the debian (ubuntu) mingw cross compiler package
+# to compile a windows executable.
+# There is no install target.
+# *.o is removed before and after running make,
+# to avoid conflicts with the normal non-cross make
+
+
+CC=i586-mingw32msvc-gcc
+
+all: clean magdec.exe
+
+magdec.exe: geomag_calc.o magdec.o Makefile.mingw32cross igrf11.h
+	$(CC) -o $@ geomag_calc.o magdec.o -lm
+	$(RM) *.o
+
+clean:
+	$(RM) *.o
+

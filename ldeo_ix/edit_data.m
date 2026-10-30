@@ -20,13 +20,14 @@ function d = edit_data(d,p)
 %		 - BUG: automatic zero blanking editing did not work with DL-only data
 %		 - added p.edit_{dn,up}_bad_ensembles
 %  Jul 21, 2015: - made bin-masking more permissive (allow indices > #bins)
+%  May 11, 2023: - added edit_depths
 
 %======================================================================
 %                    E D I T _ D A T A . M 
 %                    doc: Sat Jul  3 17:13:05 2004
-%                    dlm: Tue Jul 21 11:39:18 2015
+%                    dlm: Thu May 11 13:41:47 2023
 %                    (c) 2004 A.M. Thurnherr
-%                    uE-Info: 126 23 NIL 0 0 72 0 2 8 NIL ofnI
+%                    uE-Info: 200 49 NIL 0 0 72 0 2 4 NIL ofnI
 %======================================================================
 
 %----------------------------------------------------------------------
@@ -95,6 +96,10 @@ p=setdefv(p,'edit_skip_ensembles',[]);
 
 p=setdefv(p,'edit_dn_bad_ensembles',[]);
 p=setdefv(p,'edit_up_bad_ensembles',[]);
+
+% Set to [min max] to implement bad depth-range filter
+p=setdefv(p,'edit_depths',[]);
+
 
 %----------------------------------------------------------------------
 % Bin Masking
@@ -184,6 +189,21 @@ if p.edit_sidelobes
   disp(sprintf(' side-lobe contamination   : set %d weights to NaN',nbad));
 
 end %if p.edit_sidelobes
+
+%----------------------------------------------------------------------
+% Bad Depth Ranges
+%----------------------------------------------------------------------
+
+if length(p.edit_depths)>0
+  nbad = 0;
+  
+  ibad = find(d.izm<=-p.edit_depths(1) & d.izm>=-p.edit_depths(2));
+  nbad = nbad + length(find(isfinite(d.weight(ibad))));
+  d.weight(ibad) = NaN; d.ts_edited(ibad) = NaN;
+
+  disp(sprintf(' bad depth range           : set %d weights to NaN',nbad));
+
+end %if p.edit_depths
 
 %----------------------------------------------------------------------
 % Time-Domain Spike Filter

@@ -1,3 +1,11 @@
+%======================================================================
+%                    G E T D P T H . M 
+%                    doc: Fri Nov 19 12:17:32 2021
+%                    dlm: Fri Nov 19 12:24:52 2021
+%                    (c) 2021 A.M. Thurnherr
+%                    uE-Info: 19 0 NIL 0 0 72 0 2 4 NIL ofnI
+%======================================================================
+
 function [d,p]=getdpth(d,p)
 % function [d,p]=getdpth(d,p)
 % LADCP-2 processing software v 5.0
@@ -5,6 +13,9 @@ function [d,p]=getdpth(d,p)
 %  -- make depth from raw data 
 % Matin Visbeck and Gerd Krahmann April-2000
 % changed December 2002
+
+% CHANGES BY ANT:
+%	Nov 19, 2021: - added error message
 
 disp('GETDEPTH: Integrating depth from vertical velocity')
 
@@ -208,6 +219,9 @@ for n=1:2
    disp(' use CTD time series depth ')
    disp([' LADCP minus CTD depth mean: ',num2str(p.ladcpr_CTD_depth_std(1)),...
           '  std: ',num2str(p.ladcpr_CTD_depth_std(2))]);
+   if ~isfinite(p.ladcpr_CTD_depth_std(1))
+	error('non-numeric result, try reprocessing with p.getdepth = 2');
+   end
   end
   [p.maxdepth,ibottom]=max(-d.z);
 

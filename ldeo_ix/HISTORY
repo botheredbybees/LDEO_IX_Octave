@@ -1,0 +1,395 @@
+======================================================================
+                    H I S T O R Y 
+                    doc: Tue Aug 16 11:41:46 2005
+                    dlm: Tue Jun 25 12:18:15 2024
+                    (c) 2005 A.M. Thurnherr
+                    uE-Info: 395 70 NIL 0 0 72 3 2 4 NIL ofnI
+======================================================================
+
+NB: CHANGE VERSION IN [default.m] BEFORE UPLOADING
+
+IX_0:
+    December, 2004:
+        - mailed out 1st version with HowTo to Lisa
+
+IX_1:
+    Mar 18, 2005:
+        - corrected minor bug in [plotinv.m]
+    Aug 11, 2005:
+        - mailed out to list of LADCP-interested parties as v90.tgz
+        
+IX_2:
+    Aug 16, 2005:
+        - started HISTORY
+        - [m/default.m]: updated version, removed date
+    Aug 25, 2005:
+        - uploaded to website for Lou St.Laurent
+
+IX_3: (REPORTED VERSION IS IX_2!!!!)
+    May 18, 2006:
+        - implemented bugfix for PPI-filtering multi-ping ensembles
+          provided by Mattew Alford [edit_data.m]
+        - disabled edit_spike_filter by default
+    Jul 19, 2006:
+        - [m/besttlag.m] [mlocal/loadctd.m] added code to
+          suppress new Matlab 7.2 warning of NaN values in interp1()
+        - uploaded to website
+
+IX_4:
+    Jan  5, 2007:
+        - updated version number
+        - merged [mlocal/loadctd.m] from 2 older versions (one with bugs &
+          one without support for elapsed time)
+        - added support elapsed time-base to [mlocal/loadnav.m]
+        - added Dan Torres' code for interpolating irregular GPS time
+          series to [mlocal/loadnav.m]
+        - added CTD & NAV file layouts to p structure
+        - added [mlocal/mkSADCP.m] for pre-processing UH/CODAS-processed
+          SADCP data 
+        - fixed m/plotraw.m as suggested by Bruce Huber
+        - uploaded to ftp site for CLIVAR I8S & Stan's AA cruise
+
+IX_5:
+    Jan 17, 2007:
+        - updated version to 5beta
+        - wrote [m/geomag.m] to use external program to calculate magnetic
+          deviation
+        - added support for [geomag.m] to [mlocal/loadnav.m]
+        - emailed version to Dan Torres & Bruce Huber for beta testing
+    Jan 26, 2007:
+        - fixed BUG reported by Dan Torres regarding file-layout parameters
+          (defaults were in structure p instead of f) [loadctd.m] [loadnav.m]
+    Nov 18, 2007:
+        - added 3-beam support to [loadrdi.m] 
+    May 23, 2008:
+        - improved [loadctd.m] to allow removing bad valued
+          (f.ctd_badvals) & generate error if calculated sound
+          velocities are complex (can happen with bad CTD spikes)
+    Jun  4, 2008:
+        - improved [cruise.m] & [htmltable.m] to allow for spaces in the
+          cruise ID (they are now replaced by underscores)
+    Jun 26, 2008:
+        - fixed bug in [begin_processing_step.m] (typo that broke
+          'eval-expr' code)
+        - changed default of p.interp_ctd_times = 1; in [loadctd.m]
+          because this does not affect already regularly spaced ctd time
+          series but improves time matching of irregularly spaced ones
+    Jun 27, 2008:
+        - changed version from 5beta to 5
+    Jun 30, 2008:
+        - made [geomag.m] portable for non-UNIX OSs
+        - folded [geomag.m] into [mlocal/loadnav.m]
+    Jul  2, 2008:
+        - removed m & mlocal subdirs
+        - BUG: geomag code in [loadnav.m] required additional "" to
+               allow spaces in the path of the IGRF coefficient file
+        - removed inappropriate warning from [loadctd.m]
+
+IX_6:
+    Jul 17, 2008:
+        - changed [default.m] to version IX_6beta
+        - BUG: start/end positions were adjusted incorrectly at the end
+               of [loadctd.m] when a large time adjustment was required
+               (mainly with elapsed time base in case the ADCP was
+               started significantly before the CTD); significant
+               changes required in [loadnav.m] [loadctd.m] and
+               also a small (untested) change in [loadctdprof.m]
+    Jul 27, 2008:
+        - [loadctdprof.m] [loadnav.m]: nanmean() -> meannan()
+    Sep 18, 2008:
+        - BUG: p.navdata was not set when f.nav was set to ' ', causing
+               [loadctd.m] to bomb. Solution: set p.navdata to 0 in
+               [process_cast.m]; some modification in
+               [loadctd.m] required as well
+    Oct  7, 2008:
+        - extensively modified ProcFig. 3 in [geterr.m] to detect
+          inconsistent up/downlooker data; also changed colormap
+    Oct 15, 2008:
+        - replaced mean by median to get lat/lon in [loadnav.m]
+    Jan  7, 2009:
+        - implemented fix provided by Dan Torres to allow reading data
+          files with extra data types; [loadrdi.m] marked with "%%%
+          DT bug fix 2009-01-07"
+        - tighten use of exist() from simple true/false tests to test
+          for specific return values; affected files [default.m]
+          [dragmodel.m] [getdpthi.m] [getinv.m]
+          [getkzprof.m] [getserial.m] [htmltable.m]
+          [htmltable2.m] [loadctd.m] [loadctdprof.m]
+          [loadnav.m] [loadrdi.m] [loadsadcp.m]
+          [prepinv.m] [process_cast.m] [rditype.m]
+          [savearch.m] [saveprot.m]; this bug fix was
+          implemented based on a problem report submitted by Anna Wahlin
+          (who proposed a different fix)
+        - finally removed laproc.m presolve.m resolve.m
+    Jun 16, 2009:
+        - bugfix related to short nav time series in [loadctd.m]
+    Jul 22, 2009:
+        - changed default of ps.smallfac in [default.m]
+    Oct 27, 2009:
+        - color-coded down/upcasts in ProcFig. 6 in [prepinv.m]     
+    Oct 28, 2009:
+        - modified p.ignore_beam for dual-head systems in [loadrdi.m]       
+    Dec  1, 2009:
+        - bugfix related to geomag date check in [loadnav.m]
+    Jan 22, 2010:
+        - adapted [loadnav.m] to Eric Firing's version of magdec utility        
+    Mar  4, 2010:
+        - updated documentation in [default.m]
+        - BUG: removed shallow-profile special handling in [prepinv.m]
+        - removed setting of pk.top in [default.m]
+        - default sadcp_dtok to zero in [loadsadcp.m]
+        - BUG: new ProcFig.3 did not work for downlooker-only systems; [geterr.m]
+        - adapted [loadnav.m] to SOEST IGRF-11 magdec 
+        - changed [default.m] to version IX_6beta2
+        - emailed tgz file to Dan Torres
+        - fixed minor bug in [prepinv.m]
+    Mar  5, 2010:
+        - changed [default.m] to version IX_6beta3
+        - mailed new tgz file to Francois Ascani
+        - changed all finite() to isfinite() WITHOUT UPDATING HEADERS!
+        - changed [default.m] to version IX_6beta4
+    Mar  8, 2010:
+        - updated geomag/magdec.c to newest version
+    Oct  1, 2010:
+        - fixed bug in [checkbtrk.m] affecting profiles without valid BT
+	Oct 18, 2010:
+		- updated version in [default.m] to IX_6
+		- pulled newest geomag version
+		- cleaned up history for first Mercurial version
+
+IX_7:		
+	Jan  3, 2011:
+		- changed IGRF11 validity to 2015 in [loadnav.m]
+	Apr 14, 2011:
+		- added TODO file with known bugs and potential improvements
+	Apr 27, 2011:
+		- updated version in [default.m] to IX_7
+		- published on Mercurial server
+
+IX_8beta:
+	Jul 2011:
+		- added new plot options to [geterr.m]
+		- adapted [getinv.m] to new [geterr.m]
+		- disabled bin-remapping in [loadrdi.m]
+	Dec 30, 2011:
+		- implemented user-provided bug fix in [fixcompass.m]
+
+IX_8gamma:
+	Jan  6, 2012:
+		- removed lesqchol() from getinv.m because it does not
+		  deal well with (near-)singular matrices; while this is
+		  somewhat iffy in the sense that the new code can produce trash
+		  where the old code produced some mix of nans and zeros;
+		  however, if the data are really trash they will cause very
+		  large velocities that are removed from the solutions, i.e. it
+		  is hoped that this change does not confuse things
+		- added imagnan.m
+	Apr 26, 2012:
+		- finally removed code that calculates diffusivity profiles
+
+IX_8:
+	May  4, 2012:
+		- updated version in [default.m] [.hg/hgrc]
+		- published on Mercurial server
+
+IX_9:
+	May 22, 2012:
+		- updated version to IX_9beta in [default.m] [.hg/hgrc]
+		- disabled code to use GPS info from SADCP stream in [loadsadcp.m]
+    Jun  3, 2013:
+		- BUG: [plotraw.m] top panel of Fig. 2 was wrong for dual-headed
+        				   LADCPs with different UL/DL bin sizes
+	Jun 18, 2013:
+    	- BUG: IX_8 distribution does not include geomag (original .hg subdir
+		       had to be disabled)
+    	- fixed minor permission bugs
+		- updated version to IX_9 in [default.m] [.hg/hgrc]
+    	- hg tag IX_9
+		- published on Mercurial server
+														 
+IX_10:
+	Jun 24, 2013:
+		- updated version to IX_10beta in [default.m] [.hg/hgrc]
+		- re-added blen in [loadrdi.m] (also separate other DL/UL header
+		  vars) in order to spit it out as metadata
+	Aug 13, 2013:
+		- fixed bug in [edit_data.m] that prevented sidelobes from being
+		  edited out for UL-only data
+	Aug 15, 2013:
+		- incorporated new [ladcp2cdf.m] contributed by Diana Cardoso, with
+		  modifications
+		- removed [readme.m] which is badly out-of-date
+	Aug 16, 2013:
+		- changed semantics in [loadctd.m] to generate and error
+		  (rather than a warning and an attempted work-around, which does
+		  not work for combined GPS/CTD data) when time lagging fails
+	Aug 28, 2013:
+		- implemented bug fix to [ladcp2cdf.m] provided by Diana Cardoso
+	Mar  5, 2014:
+		- version updated to IX_10
+		- added Processing_HowTo.pdf
+		- uploaded for DIMES UK5
+
+IX_11:
+	Mar 21, 2014:
+		- updated version to IX_11beta in [default.m] [.hg/hgrc]
+		- minor bug fix in [loadctd.m]
+	Jun  9, 2014:
+		- improved messages in [prepinv.m]
+	Jun 11, 2014:
+		- changed savecdf default in [default.m]
+	Jul 13, 2014:
+		- enabled automatic editing in [edit_data.m] when blanking distance is zero 
+	Sep 26, 2014:
+		- modified [process_cast.m] and [saveres.m] to add support for
+		  p.orig (patch provided by D. Torres)
+	Jan 23, 2015:
+		- made [loadrdi.m] croak when UL file is not found
+		- added new editing to [edit_data.m]
+	Jan 25, 2015:
+		- separated uc/dc in bin-averaged residual plots in [geterr.m]
+		  to facilitate detection of package-wake effects
+	Apr 15, 2015:
+		- modified ambiguity-velocity warning message in [loadrdi.m]
+		  following a suggestion of Diana Cardoso
+		- implemented fixes for bugs reported by Achim Randelhoff via
+  		  yahoo email on 04/23/2014 [getinv.m] [plotraw.m]
+	Apr 22, 2015:
+		- modified [begin_processing_step.m] to evaluate the expression
+		  provided as an argument before re-loading [set_cast_params.m]
+	May  8, 2015:
+		- folded in DoMORE-1 [getinv.m] with changes to dragfac
+		  and smallfac
+	May 12, 2015:
+		- finally removed step 16 from [process_cast.m]
+	May 27, 2015:
+		- updated diagnostic mesages in [loadctd.m] [loadrdi.m]
+	May 28, 2015:
+		- added error message to [loadctd.m]
+	Jun 12, 2015:
+		- set p.lat and p.lon if only SADCP gps data are available
+	Jul 21, 2015:
+		- [edit_data.m] made bin masking more permissive
+	Jul 27, 2015:
+		- replaced [ladcp2cdf.m] with homegrown alternative that is
+		  *not* consistent with old format; Diana Cardoso and EF are
+		  working on replacement code
+	Nov 25, 2015:
+		- replaced [ladcp2cdf.m] with a version written by Diana and
+		  checked by Eric; this update adds [add_struct.m] to the
+		  distribution 
+		- updated version to IX_11 in [default.m] [.hg/hgrc]
+	Nov 26, 2015:
+		- BUG in [ladcp2cdf.m]
+		- commit version IX_11		
+
+IX_12:
+	Feb 18, 2016:
+		- updated version to IX_12 in [default.m] [.hg/hgrc]
+		- bug fix (geomag year range check) in [loadnav.m]
+		- commit
+		- publish
+
+IX_13:
+	Feb 18, 2016: 
+		- updated version to IX_13beta in [default.m] [.hg/hgrc]
+		- incorporated GPS interpolation code provided by Jay Hooper
+		  into [loadnav.m]
+	Feb 23, 2016:
+		- improved error message in [loadrdi.m]
+	Feb 29, 2016:
+		- added station number to log-file processing-step headers		
+	Mar  2, 2016:
+		- BUG: [fixcompass.m] did not work for single-headed profiles
+	Apr  1, 2016:
+		- cosmetics in [prepinv.m]		
+	Jul 27, 2016:
+		- added .mat to checkpoint filename to allow more complect file names
+	Sep  1, 2016:
+		- BUG in [uvwrot.m]: diagnostic message displayed only pitch
+	Oct 14, 2016:
+		- BUG in [process_cast.m]: ctd_t, ctd_s were set after first pass,
+		  sometimes causing inconsistent vector lengths
+	Jan  6, 2017:
+		- improvement to [mkSADCP.m]
+	Mar 29, 2017:
+		- added archive structs to .mat output [process_cast.m] [saveres.m]
+		- added saveplot_pdf to [default.m]
+	Jun 13, 2017:
+		- BUG: Matlab incompatibility in [checkinv.m]
+	Dec  7, 2017:
+		- fixed bug in [geterr.m] for P6 cruise
+	Jan 17, 2018:
+		- updated version to IX_13 in [default.m] [.hg/hgrc]
+		- commit
+		- publish
+
+
+IX_14:
+	Sep 14, 2018:
+		- updated version to IX_14beta in [default.m] [.hg/hgrc]
+		- fixed (without much checking) bug introduced in 2008 code move
+		  from [loadctd.m] to [loadnav.m] (had to be undone in 2020)
+	Sep 15, 2018:
+		- [process_cast.m] disabled serial-number code
+
+	Feb  8, 2019:
+		- added pauses to figure-saving loop, because on TheThinMint
+		  occasionally the wrong figures were saved
+	Feb 16, 2019:
+		- moved post-processing to step 17 to ensure it is done before
+		  results are saved		
+	Aug 30, 2019:
+		- changed error message about p.getdepth in process_cast.m
+		- BUG: missing pressure values cause problem in output [getdpthi.m]
+	Sep  4, 2019:
+		- MAY HAVE UPDATED VERSION TO 15beta AND LATER RETURNED TO 14beta2
+		- changed p.btrk_default from 3 to 2
+		- fixed [savearch.m] date bug reported by EF
+		- swapped in Gerd's code [magdev.m] and made default in [loadnav.m]
+		- modifications suggested by Gerd:
+			- [getinv.m] rounded default ps.dz
+			- [prepinv.m] BUG related to weights
+			- [getbtrack.m] fixed minor typo
+			- [checkbtrk.m] fixed plotting error 
+		- adapted [process_cast.m] to new [calc_shear3.m] from GK
+		- [calc_shear3.m] required some adaptation
+
+	Jan 27, 2020:
+		- BUG: btmi was set to nan for JR195 stations 20 and 30;
+               fixed by skipping sub-plots if btmi is not finite in [geterr.m]
+		- had to undo Sep 14, 2018 bug "fix" in [loadctd.m] [loadnav.m]
+		- [loadrdi.m] moved magdev call further back, where start time is known
+
+	Apr 29, 2021:
+		- disable use of bin-1 data for integration of w; this was necessitated
+		  by A22 030, which is a shallow profile where bin 1 of the on-deck DL
+          data seems valid, messing up the zmax calculation
+
+	Jun 29, 2021:
+		- published IX_14
+
+----------------------------------------------------------------------
+
+IX_15beta:
+	Nov 24, 2022:
+		- updated version to IX_15beta in [default.m]
+	May  3, 2023:
+		- [loadctd.m]: added removal of missing values in CTD file when
+		  p.interp_ctd_times is set (default)
+	May 11, 2023:
+		- updated version to IX_15beta in [.hg/hgrc]
+		- [edit_data.m]: added p.edit_depths to deal with partial depth
+  		  processing 
+	May 22, 2023:
+		- [magdev.m]: updaged to IGRF13
+	Jun 25, 2024:
+		- [loadrdi.m] [process_cast.m]: BUG: BT data was used during
+		  processing of UL-only profile
+		- [current/default.m] [current/.hg/hgrc]: updated version to IX_15
+		- udpated howto on overleaf & copied as indicated in
+		  [../README.Publish] 
+		- hg commit (IX_15 Release Version)
+        - published
+
+----------------------------------------------------------------------        

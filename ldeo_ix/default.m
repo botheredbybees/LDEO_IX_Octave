@@ -1,9 +1,9 @@
 %======================================================================
-%                    D E F A U L T . M 
+%                    C U R R E N T / D E F A U L T . M 
 %                    doc: Sat Jun 26 06:10:09 2004
-%                    dlm: Fri Sep 14 18:19:40 2018
+%                    dlm: Tue Jun 25 12:11:00 2024
 %                    (c) 2004 ladcp@
-%                    uE-Info: 40 50 NIL 0 0 72 0 2 4 NIL ofnI
+%                    uE-Info: 46 46 NIL 0 0 72 0 2 4 NIL ofnI
 %======================================================================
 
 % CHANGES BY ANT:
@@ -22,6 +22,12 @@
 %				  - changed version to IX_13beta
 %	Mar 29, 2017: - added saveplot_pdf
 %	Jan 17, 2018: - changed ersion to IX_13 and published
+%	Sep  4, 2019: - changed p.btrk_mode from 3 to 2 (own only)
+%			      - updated to version IX_14beta
+%	???			  - updated to version IX_14beta2
+%	Jun 28, 2021: - updated version to IX_14
+%	Nov 24, 2022: - updated to IX_15beta
+%	Jun 25, 2024: - updated to IX_15
 
 % LADCP processing software
 % M. Visbeck. LDEO/2003
@@ -37,7 +43,7 @@
 %             the data
 % structure ps.??? contains parameter for the solution
 % structure att.??? contains attributes
-p.software='LDEO LADCP software: Version IX_14beta';
+p.software='LDEO LADCP software: Version IX_15';
 
 % file names
 % f.ladcpdo  is the ONLY required input
@@ -167,7 +173,7 @@ p=setdefv(p,'cruise_id', 'unknown');
 %        2 :   use only own bottom track
 %        3 :   use RDI, if existent, own else (default)
 %        0 :   use not bottom track at all
-% p=setdefv(p,'btrk_mode',3);
+% p=setdefv(p,'btrk_mode',2);
 
 % p.btrk_ts is in dB to detect bottom above bin1 level (for own btm track)
 % p=setdefv(p,'btrk_ts',10);

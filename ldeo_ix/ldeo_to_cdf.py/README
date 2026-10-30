@@ -1,0 +1,11 @@
+Andreas,
+
+The script is inside my "pycurrents" Python package, so it can't simply be pulled out as a standalone:
+
+https://currents.soest.hawaii.edu/hgstage/pycurrents/file/tip/pycurrents/scripts/ldeo_to_cdf.py
+
+It imports functionality from 3 modules in pycurrents.
+
+(The code is also messy, not an example of good Python.  It could use a thorough going-over with some refactoring and reformatting.)
+
+Eric 

@@ -1,9 +1,9 @@
 %======================================================================
 %                    L O A D C T D . M 
 %                    doc: Sat Jun 26 15:56:43 2004
-%                    dlm: Fri Sep 14 18:15:35 2018
+%                    dlm: Tue May  2 11:51:23 2023
 %                    (c) 2004 M. Visbeck & A. Thurnherr
-%                    uE-Info: 545 36 NIL 0 0 72 0 2 8 NIL ofnI
+%                    uE-Info: 100 31 NIL 0 0 72 0 2 8 NIL ofnI
 %======================================================================
 
 function [d,p]=loadctd(f,d,p)
@@ -85,8 +85,19 @@ f = setdefv(f,'ctd_time_base',0);
 %   Mar 21, 2014: - BUG: f.ctd_time_base used p.ctd_time_base set as default
 %   May 27, 2015: - removed confusing diagnostic message regarding adjusting NAV time
 %   May 28, 2015: - added error message when there are no valid vertical velocities
-%   Apr 18, 2018: - BUG: ADCP-time shift warning was meaningless with elapwsed time_base
+%   Apr 18, 2018: - BUG: ADCP-time shift warning was meaningless with elapsed time_base
 %   Sep 14, 2018: - BUG: code move in 2008 broke working with single GPS file for entire cruise
+%   Jan 28, 2020: - I don't understand Sep 14, 2018 bug any more; fix for that bug 
+%		    involved moving code to loadnav.m, which does not work because
+%		    during loadnav p.time_start and end are not known (LADCP turn on/off 
+%		    times are used); present code works with SR1b repeat cruises, which
+%	            all have single gps files
+%   Apr 29, 2021: - disable use of bin-1 data for integration of w; this was necessitated
+%		    by A22 030, which is a shallow profile where bin 1 of the on-deck DL 
+%	 	    data seems valid, messing up the zmax calculation
+%   May  3, 2023: - added removal of missing values in CTD file if p.interp_ctd_times is
+%		    set (default); before this change, no missing values (nan) were allowed
+%		    in CTD data
 
 % read SEABIRD ctd timeseries file
 disp(['LOADCTD: load CTD time series ',f.ctd])
@@ -157,6 +168,20 @@ data=A([i_press i_temp i_salin],:)';
 
 % interpolate to regular time series
 if p.interp_ctd_times
+  A = rmmissing(A,2);							% remove columns (depths) with missing data
+  if length(A) < length(timctd)
+    disp(sprintf(' removed %d CTD scans with missing values',...
+    		length(timctd)-length(A)))
+  end
+
+  timctd=A(i_time,:)';							% update timctd
+  switch f.ctd_time_base
+    case 0 % elapsed time in seconds
+      timctd = timctd/24/3600 + julian(p.time_start);
+    case 1 % year-day
+      timctd = timctd + julian([p.time_start(1) 1 0 0 0 0]);
+  end
+
   min_t = min(timctd);
   max_t = max(timctd);
   delta_t = median(diff(timctd));
@@ -167,7 +192,16 @@ if p.interp_ctd_times
 end
 
 % calc LADCP depth
-w=meannan(d.rw);
+%	- don't use bin 1, which is contaminated by ringing
+%	  when zero blanking is used 
+
+if length(d.zu)>0 && length(d.zd)>0					% dual-head system
+  w = meannan(d.rw([1:(p.nbin_d-1),(end-p.nbin_u+1):end],:));
+elseif length(d.zu)>0							% uplooker only(?)
+  w = meannan(d.rw([(end-p.nbin_u+1):end],:));
+else
+  w = meannan(d.rw([1:(p.nbin_d-1)],:));				% downlooker only
+end
 if sum(isfinite(w)) == 0
     error('No valid vertical velocities --- aborting');
 end
@@ -542,7 +576,7 @@ end
 %	  at this stage
 %----------------------------------------------------------------------
 
-if p.navdata && f.nav_time_base == 0
+if p.navdata %%%&& f.nav_time_base == 0
   if min(d.navtime_jul)>max(d.time_jul) | max(d.navtime_jul)<min(d.time_jul)
     disp('NAV timeseries does not overlap WRONG STATION????')
     disp(['  NAV-data : ',datestrj(d.navtime_jul(1)),'	to ',datestrj(d.navtime_jul(end))])
@@ -651,7 +685,7 @@ function a=datestrj(b)
 % 
 % print julian date string
 %
-a=datestr(b-julian([0 1 0 0 0 0]));
+a=datestr(b-julian([0 1 0 0 0 0]));			
 
 %
 %==============================================================

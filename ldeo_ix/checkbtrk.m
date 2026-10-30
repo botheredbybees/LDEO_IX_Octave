@@ -5,9 +5,9 @@ function p=checkbtrk(d,di,de,dr,p);
 %======================================================================
 %                    C H E C K B T R K . M 
 %                    doc: Sat Jul  3 23:57:25 2004
-%                    dlm: Fri Oct  1 20:54:13 2010
+%                    dlm: Wed Sep  4 19:02:39 2019
 %                    (c) 2004 ladcp@
-%                    uE-Info: 22 24 NIL 0 0 72 0 2 8 NIL ofnI
+%                    uE-Info: 24 0 NIL 0 0 72 0 2 8 NIL ofnI
 %======================================================================
 
 % CHANGES BY ANT:
@@ -20,6 +20,7 @@ function p=checkbtrk(d,di,de,dr,p);
 %			was set) but when all these bottom returns turned out
 %			to be outside the valid range (i.e. almost certainly 
 %			false)
+%  Sep  4, 2019: - fixed plotting BUGs reported by GK
 
 if ~existf(p,'zbottom'), return , end
 if ~isfinite(p.zbottom), return, end
@@ -254,7 +255,7 @@ clf
 subplot(222); hold on;
  plot(rvabe,izm,'.k'); 			% all velocities
  plot(rva,izm,'.g'); 			% edited velocities
- plot(rva(iz),izm(iz),'.r')		% used-for-BT velocities
+ plot(rvabe(iz),izm(iz),'.r')		% used-for-BT velocities
  axis tight
  ax=axis;
  ax(1:2)=[-1 1]*0.8;
@@ -305,7 +306,7 @@ tx2=0.05;
 subplot(223); hold on;
  plot(rwabe,izm,'.k');				% all velocities
  plot(rwa,izm,'.g');				% edited velocities
- plot(rwa(iz),izm(iz),'.r');			% used-for-BT velocities
+ plot(rwabe(iz),izm(iz),'.r');			% used-for-BT velocities
  axis tight
  ax=axis;
  ax(1:2)=[-1 1]*0.4;

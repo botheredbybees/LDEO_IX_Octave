@@ -13,6 +13,15 @@ COPY stubs/   /opt/stubs/
 # shadow Octave's real plotting functions without touching ldeo_ix/ itself.
 ENV OCTAVE_PATH=/opt/stubs:/opt/ldeo_ix
 
+# IX_15's built-in declination code (ldeo_ix/magdev.m) reads its IGRF13
+# coefficients with xlsread(), which in Octave comes from the Octave Forge
+# "io" package. Installed from Octave Forge at build time (needs network);
+# the version actually installed is recorded in CHANGES.md. Loaded for every
+# session through OCTAVE_SITE_INITFILE.
+RUN octave-cli --eval "pkg install -forge io" \
+    && echo "pkg load io;" > /opt/octaverc
+ENV OCTAVE_SITE_INITFILE=/opt/octaverc
+
 # Web intake app (forms that generate set_cast_params.m) -- see webapp/.
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       python3 python3-pip \

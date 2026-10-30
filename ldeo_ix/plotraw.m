@@ -222,11 +222,8 @@ end
 %=============================================
 function checkbeam(t,ax,is_bottom)
 % check beam performance
-% NOTE(patch): parameter renamed from `do` -- reserved keyword in
-% Octave (do-until), valid identifier in MATLAB. Call sites use positional
-% args only, so this rename is local to the function body.
 
-%%%bl=size(t,2);
+%%%bl=size(t,2); 
 bl = length(t);	%%% BH fix
 
 iend=fix(bl/2):bl;

@@ -8,9 +8,9 @@ function [p,dr,ps,de,der]=getinv(di,p,ps,dr,iplot)
 %======================================================================
 %                    G E T I N V . M 
 %                    doc: Thu Jun 17 15:36:21 2004
-%                    dlm: Thu Jul 23 14:06:09 2015
+%                    dlm: Wed Sep  4 16:55:50 2019
 %                    (c) 2004 ladcp@
-%                    uE-Info: 292 1 NIL 0 0 72 0 2 8 NIL ofnI
+%                    uE-Info: 35 55 NIL 0 0 72 0 2 8 NIL ofnI
 %======================================================================
 
 % CHANGE HISTORY:
@@ -32,22 +32,17 @@ function [p,dr,ps,de,der]=getinv(di,p,ps,dr,iplot)
 % Jul 28, 2014: - modified how to specify smallfac
 % Aug  9, 2014: - modified how to specify dragfac (+ve for fixed; -ve for scaled Martin's default)
 % Jul 23, 2015: - commented on bug below (#!#)
+%		- rounded default ps.dz (GK suggestion)
 
 if nargin<5, iplot=0; end
 
 %###  start by defining all processing parameter which are not set by the user
 disp('GETINV:  compute best velocity profile')
 
-% resolution of final profile in meter
-ps=setdefv(ps,'dz',medianan(abs(diff(di.izm(:,1)))));
-% how strong shall the bottom track influence the solution
+ps=setdefv(ps,'dz',round(medianan(abs(diff(di.izm(:,1))))));
 ps=setdefv(ps,'botfac',1); 
-% how strong shall the SADCP velocity influence the solution
 ps=setdefv(ps,'sadcpfac',1); 
-% how stong shall the GPS positon influence the barotropic solution
 ps=setdefv(ps,'barofac',1);
-% how strong do you believe in the simple wire dynamics (not very good yet)
-%ps=setdefv(ps,'dragfac',tanh(p.maxdepth/3000)*0.2);
 ps=setdefv(ps,'dragfac',0);
 
 % negative values weigh Martin's original default
@@ -349,9 +344,6 @@ z =([1:nz]')*ps.dz;
 
 A1o=A1;
 A2o=A2;
-% NOTE(patch): `do` renamed to `d_orig` -- reserved keyword in
-% Octave (do-until), valid identifier in MATLAB. The struct field name
-% de.do below is untouched (field names aren't keyword-restricted).
 d_orig=d;
 
 %### add weights to data

@@ -4,6 +4,48 @@
 provenance), patched only where needed to run under GNU Octave 9.2 instead
 of MATLAB. Every change is listed here; nothing else was touched.
 
+## Current baseline: upstream LDEO_IX IX_15 (2026-10-30, NDO-1116)
+
+`ldeo_ix/` is now the upstream tree at `athurnherr/LDEO_IX` commit `ecfda32` (release IX_15,
+25 June 2024; published 23 August 2024), copied unchanged except for the files below and with the
+Mercurial metadata (`.hgignore`, `.hgtags`) removed. It replaces the older snapshot described in
+"Baseline provenance and comparison with upstream IX_15" further down. Patches applied on top of
+IX_15, all in `ldeo_ix/`:
+
+| File | Change | Why |
+|---|---|---|
+| `getinv.m` | `do=d;` and `de.do=do;` use `d_orig` instead | `do` is an Octave keyword. Portability only. Upstream PR 5. |
+| `plotraw.m` | `checkbeam(t,ax,do)` parameter renamed `is_bottom` | Same. Upstream PR 5. |
+| `end_processing_step.m` | checkpoint `save` writes `%s_%d.mat` | MATLAB appends `.mat`, Octave does not. Upstream PR 5. |
+| `loadnav.m` | `nav_time_base` default is set on `f`, which is where the code reads it | Genuine upstream bug. Upstream PR 6. |
+| `loadrdi.m` | no-flow-gradient test checks `drv` instead of `dru` twice (two places) | Genuine upstream bug. Upstream PR 6. |
+| `magdev.m` | `xlsread` is given the full path found with `file_in_loadpath` (Octave only) | Octave's `xlsread` looks only in the current directory, so the IGRF13 coefficient file is not found from `/data`. |
+
+Also changed outside `ldeo_ix/`:
+- `stubs/rmmissing.m` (new, original code): the numeric-matrix subset of MATLAB's `rmmissing`, which
+  `loadctd.m` calls as `rmmissing(A,2)` and Octave 9.2 does not implement.
+- `Dockerfile`: installs the Octave Forge `io` package (version 2.7.2 at the time of this change; needs
+  network at build time) because IX_15's `magdev.m` reads `IGRF13coeffs.xlsx` with `xlsread`, and loads it
+  for every session through `OCTAVE_SITE_INITFILE`.
+- `magdec/magdec.py` is still installed but is no longer used: IX_15 defaults to its built-in declination code
+  (`p.magdec_source = 2`, IGRF13). Set `p.magdec_source = 1` to use it.
+
+Dropped because IX_15 already has the fix: the `f.IGRF` argument, the up-looker bottom-track check
+(NDO-786) and the `geterr.m` `btmi` fallback, so those three patches in the list below no longer apply.
+Also gone with the older snapshot: `IGRF00.m`, `IGRF95.m`. Added by IX_15: `IGRF13coeffs.xlsx`, `geomag/`
+(C source, not used at run time), `HISTORY`, `Processing_HowTo.pdf`, `ldeo_to_cdf.py`, `calc_shear3.m`.
+
+Validation (NDO-1116): Nuyina voyage 202324050 casts 004, 005 and 006 were processed on the old snapshot
+(with the IGRF-14 `magdec`) and on IX_15. The declination differs by 0.013 to 0.014 degrees (IX_15 built-in
+15.8683 to 15.8716 against 15.8815 to 15.8848), the profiles differ by 0.5 to 0.8 cm/s RMS and up to 3.3 cm/s at
+single depths, and the test suite passes (webapp 109, magdec 6). See the Jira issue for the comparison table.
+
+## Superseded: patches against the earlier IX_14beta snapshot
+
+The numbered list below describes the earlier snapshot. Items 1, 2, 3 (as the `f.nav_time_base` workaround),
+4 and 5 carry over to IX_15 as the table above. Items 6, 7 and 8 and the `magdev` year-2000 fallback do not,
+because IX_15 already fixes them.
+
 ## Genuine bugs fixed to get the pipeline running
 
 1. **`getinv.m`**: `do` used as a plain variable name (`do=d;` / `de.do=do;`).
@@ -157,15 +199,15 @@ How each item above stands against IX_15:
 | 6 (dead `f.IGRF` argument) | Fixed; the warning no longer references it. |
 | 7 (up-looker bottom track used, NDO-786) | Fixed upstream (`db.Up` check, warning and ignore). |
 | 8 (`geterr.m` `btmi` NaN) | Fixed upstream 27 Jan 2020 (sub-plots skipped when `btmi` is not finite); our third fallback is redundant. |
-| `magdev` year-2000 fallback | Fixed upstream: `magdev.m` is IGRF12-based and takes the cast year, and `loadnav.m` defaults to it (`magdec_source=2`). |
+| `magdev` year-2000 fallback | Fixed upstream: `magdev.m` is IGRF13-based (adapted May 2023) and takes the cast year, and `loadnav.m` defaults to it (`magdec_source=2`). |
 
 So items 3 and 4 are bugs in the current release; items 6 to 8 and the year-2000 fallback
 affect only this older snapshot. The statement above that no live source for `magdec` exists is
 also not right for the GitHub release: IX_15 ships `geomag/` (C source `magdec.c`,
 `IGRF11.COF`, `WMM2010.COF`). The dead links were the old SOEST and LDEO servers.
 
-Rebasing this image onto IX_15 and re-running the validation casts is tracked as a Jira task
-(NDO-1116 in the AAD Jira project; see the issue for status).
+The rebase onto IX_15 and the validation casts are NDO-1116 (done on branch `ndo-1116-rebase-ix15`);
+see "Current baseline" above.
 
 ## Missing/incompatible functions — fixed via `stubs/`
 
@@ -198,7 +240,7 @@ the Docker image to provide the tool that `loadnav.m` expects. Without it, the
 pipeline silently fell back to a hardcoded year-2000 magnetic model (from the
 `magdev()` function) for every cast, resulting in inaccurate current profiles. (This
 describes this image's older `ldeo_ix/` snapshot. Current upstream IX_15 uses a newer,
-IGRF12-based `magdev.m` that takes the cast year, and ships the `magdec` source under
+IGRF13-based `magdev.m` that takes the cast year, and ships the `magdec` source under
 `geomag/`; see "Baseline provenance and comparison with upstream IX_15" below.)
 Verified live on 2026-09-06 by re-running real Nuyina LADCP cast 005 (station
 5, 2024-06-17): the real `geomag()` branch in unmodified `ldeo_ix/loadnav.m`

@@ -4,6 +4,17 @@ function [d,p]=getbtrack(d,p);
 % create own bottom track in addition to the one used before
 %
 
+%======================================================================
+%                    G E T B T R A C K . M 
+%                    doc: Wed Sep  4 17:07:35 2019
+%                    dlm: Wed Sep  4 17:09:37 2019
+%                    (c) 2019 A.M. Thurnherr
+%                    uE-Info: 108 68 NIL 0 0 72 0 2 8 NIL ofnI
+%======================================================================
+
+% CHANGES BY ANT:
+%   Sep  4, 2019: - fixed minor typo (GK suggestion)
+
 % force own distance to RDI bottom track
 p=setdefv(p,'bottomdist',0);
 % "manual" bottom track for down looker
@@ -25,7 +36,7 @@ disp('GETBTRACK creates own bottom track in addition to RDI')
 % at=0.039; % attenuation dB/m for 150 kHz
 % at=0.062; % attenuation dB/m for 300 kHz
 if d.down.Frequency==300,
-  p=setdefv(p,'ts_att_dn',0.06);
+  p=setdefv(p,'ts_att_dn',0.062);
 else
   p=setdefv(p,'ts_att_dn',0.039);
 end
@@ -50,7 +61,6 @@ if p.btrk_mode>=1
     if p.btrk_ts>0
 
       disp(' using increased bottom echo amplitudes to create bottom track')
-      % don't use first bin
       fitb1=1;
       zd=d.zd(fitb1:end);
       ead=d.tg(d.izd(fitb1:end),:);
@@ -94,7 +104,7 @@ if p.btrk_mode>=1
 
       disp([' use ',num2str(p.btrk_below),...
          ' bins below maximum target strength for own bottom track velocity'])
-      % locate acceptable bottom tracks (don't accept first/last bin)
+      % locate acceptable bottom tracks (don't accept first two and last bin)
       ii=find(dts>p.btrk_ts & ...
               zmead>min(p.btrk_range) & zmead<max(p.btrk_range) & ...
                imeadbv<(nbin-1) & imeadbv>fitb1);

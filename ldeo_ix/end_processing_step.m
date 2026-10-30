@@ -20,12 +20,6 @@ if pcs.stop > 0 & pcs.cur_step >= pcs.target_begin_step
   more off; % just in case...
 end
 
-% Original LDEO_IX idiom: builds a `save <checkpoint-name>_<N>` command over
-% local trusted variables (f.checkpoints, pcs.cur_step) -- not external input.
-% NOTE(patch): added the .mat extension here -- MATLAB's `save name`
-% (no extension) auto-appends .mat, but Octave's does not, so without this
-% the file written here ("003_1") doesn't match what begin_processing_step.m
-% later loads ("003_1.mat"), silently breaking checkpoint resume.
 if any(ismember(pcs.cur_step,p.checkpoints))
   disp(sprintf('SAVING CHECKPOINT %s_%d',f.checkpoints,pcs.cur_step));
   eval(sprintf('save %s_%d.mat',f.checkpoints,pcs.cur_step));

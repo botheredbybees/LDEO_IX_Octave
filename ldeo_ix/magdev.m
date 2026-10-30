@@ -1,49 +1,113 @@
-function  [dev,d,h,i,f,x,y,z]=magdev(flat,flon,elevkm,nmax,igrf);
-% function [dev,d,h,i,f,x,y,z]=magdev(flat,flon,elevkm,nmax,igrf);
+function  [dev,d,h,i,f,x,y,z]=magdev(flat,flon,elevkm,year);
+% function [dev,d,h,i,f,x,y,z]=magdev(flat,flon,elevkm,year);
 % 
 % compute magnetic deviation
-% input:
-%      flat    latitude (degree)
-%      flon    longitude (degree)
-%      elevkm  elevation above mean geoid (km)
-%      nmax    number of harmonics
-%      igrf    (need file, default 'IGRF95')
 %
-% output:
-%     dev     mag. deviation (degree)
+% based on IGRF12 model (observed until end of 2014, predicted until end of 2019)
+%
+% input:  flat        - latitude (degree)
+%         flon        - longitude (degree)
+%         elevkm [0]  - elevation above mean geoid (km)
+%         year        - decimal year
+%
+% output:	dev         - mag. deviation (degree)
 % 
 % 
 % based of FORTRAN ROUTINE GEOMAG.FOR
-% more info under  http://fdd.gsfc.nasa.gov/IGRF.html
+% more info under  http://www.ngdc.noaa.gov/IAGA/vmod/igrf.html
+% 
 %
+% version 0.5	last change 13.07.2015
+
+
 % M. Visbeck, LDEO FEB 2000
+% rewritten for other epochs, G. Krahmann, IFM-GEOMAR Mar 2007
 %
+% modified for >=R14                    GK, Jun 2007    0.1-->0.2
+% switch to IGRF11                      GK, 08.11.2010  0.2-->0.3
+% replaced sind/cosd with sind/cosd   GK, 31.05.2011  0.3-->0.4
+% switch to IGRF12                      GK, 12.07.2015  0.4-->0.5
 
-if nargin<5
- igrf='IGRF95';
- igrf='IGRF00';
+%======================================================================
+%                    M A G D E V . M 
+%                    doc: Wed Sep  4 18:17:31 2019
+%                    dlm: Mon May 22 10:53:30 2023
+%                    (c) 2019 G. Krahmann
+%                    uE-Info: 47 0 NIL 0 0 72 0 2 8 NIL ofnI
+%======================================================================
+% CHANGES BY ANT:
+%   Sep  4, 2019: - changed sin/cos_d to sin/cosd
+%   May 22, 2023: - adapted to IGRF13
+
+%
+% read the coefficients
+%
+fname = 'IGRF13coeffs.xlsx';
+if exist('OCTAVE_VERSION','builtin') ~= 0	% Octave's xlsread (io package) only looks in the current directory
+  fname_found = file_in_loadpath(fname);
+  if ~isempty(fname_found), fname = fname_found; end
 end
-eval(['gh=',igrf,';'])
+gh = xlsread(fname);
 
-if nargin<4
- nmax=10;
+
+%
+% determine the maximum order of polynomials
+%
+% this might need modification in future versions of the file
+%
+if year<2000 
+  nmax = 10;
+else
+  nmax = 13;
 end
 
+
+%
+% interpolate the coefficients in time
+%
+warning off	% another workaround for annoying >=R14 warnings
+if year <= gh(1,end-1)
+  gh2 = interp1( gh(1,3:end-1),gh(2:end,3:end-1)',year)';
+else
+  gh2 = interp1( gh(1,3:end-1),gh(2:end,3:end-1)',gh(1,end-1))';
+  ghc = gh2*0;
+  dummy = gh(2:end,end);
+  good = find(~isnan(dummy));
+  ghc(good) = dummy(good);
+  gh2 = gh2+ghc*(year-gh(1,end-1));
+end
+warning on
+
+
+% 
+% set default elevation
+%
 if nargin<3
  elevkm=0;
 end
 
 
-
-[x,y,z] = shval3(flat,flon,elevkm,nmax,gh);
+%
+% calculate field
+%
+[x,y,z] = shval3(flat,flon,elevkm,nmax,gh2);
 [d,i,h,f]=dihf (x,y,z);
 
+
+%
+% convert units
+%
 dev=d*180/pi;
 
+
+%
+% more detailed screen output, if output is not stored
+%
 if nargout<1
- disp([' model ',igrf,'  harmonics: ',int2str(nmax)])
+ disp([' model ',fname,'  harmonics: ',int2str(nmax)])
  disp([' lat: ',num2str(flat)])
  disp([' lon: ',num2str(flon)])
+ disp([' tim: ',num2str(year)])
  disp([' mag dev [deg]: ',num2str(d*180/pi)])
 end
 
@@ -88,7 +152,6 @@ function [x,y,z] = shval3(flat,flon,elevkm,nmax,gh)
 %       version is dimensioned for nmax of 14 or less).
 %
 % ================================================================
-dtr = pi/180;
 r=elevkm;
 erad=6371.2;
 a2=40680925.;
@@ -96,11 +159,11 @@ b2=40408588.;
 
 
 
-slat = sin(flat*dtr);
+slat = sind(flat);
 aa = min(89.999,max(-89.999,flat));
-clat = cos(aa*dtr);
-sl(1) = sin(flon*dtr);
-cl(1) = cos(flon*dtr);
+clat = cosd(aa);
+sl(1) = sind(flon);
+cl(1) = cosd(flon);
 
 x=0.0;
 y=0.0;

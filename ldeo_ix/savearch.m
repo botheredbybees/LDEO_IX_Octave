@@ -1,14 +1,15 @@
 %======================================================================
 %                    S A V E A R C H . M 
 %                    doc: Wed Jan  7 16:51:58 2009
-%                    dlm: Thu Aug 15 12:17:03 2013
+%                    dlm: Wed Sep  4 16:11:00 2019
 %                    (c) 2009 A.M. Thurnherr
-%                    uE-Info: 217 16 NIL 0 0 72 0 2 8 NIL ofnI
+%                    uE-Info: 12 60 NIL 0 0 72 0 2 8 NIL ofnI
 %======================================================================
 
 % CHANGES BY ANT:
 %   Jan  7, 2009: - tightened use of exist()
 %   Aug 15, 2013: - adapted to new [ladcp2cdf.m]
+%   Sep  4, 2019: - fixed julian bug reported by Eric Firing
 
 function [da]=savearch(dr,d,p,ps,f,att)
 % function [da]=savearch(dr,d,p,ps,f,att)
@@ -19,7 +20,7 @@ p=setdefv(p,'ladcp_station',NaN);
 p=setdefv(p,'ladcp_cast',1);
 g=gregoria(d.time_jul(1));
 p=setdefv(p,'ref_year',g(1));
-year0=julian([p.ref_year,0,0,0,0,0]);
+year0=julian([p.ref_year,1,1,0,0,0]);
 
 
  da.GEN_Velocity_Units                = 'm/s';

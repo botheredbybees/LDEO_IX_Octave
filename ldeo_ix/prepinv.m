@@ -1,9 +1,9 @@
 %======================================================================
 %                    P R E P I N V . M 
 %                    doc: Wed Jan  7 16:46:29 2009
-%                    dlm: Fri Apr  1 08:52:25 2016
+%                    dlm: Wed Sep  4 17:03:23 2019
 %                    (c) 2009 A.M. Thurnherr
-%                    uE-Info: 17 29 NIL 0 0 72 0 2 8 NIL ofnI
+%                    uE-Info: 18 93 NIL 0 0 72 0 2 8 NIL ofnI
 %======================================================================
 
 % CHANGES BY ANT:
@@ -15,6 +15,7 @@
 %			 available
 %   Jun  9, 2014: - improved messages
 %   Apr  1, 2016: - cosmetics
+%   Sep  4, 2019: - BUG: superens std was calculated without removing means! (reported by GK)
 
 function [di,p,d]=prepinv(d,p,dr)
 % function [di,p,d]=prepinv(d,p,dr)
@@ -530,7 +531,7 @@ else
    iav=round(length(ur)/200*p.avpercent);
    ur=meshgrid(ur,ibin);
    di.ru(:,im)=medianan([d.ru(:,i1).*w2-ur]',iav)'+ruav;
-   rus=stdnan([d.ru(:,i1).*w2]')';
+   rus=stdnan([d.ru(:,i1).*w2-ur]')';
 % V
    vr=medianan(d.rv(izr,i1).*w);
    rvav=meannan(vr);
@@ -540,7 +541,7 @@ else
    vr=meshgrid(vr,ibin);
    di.rv(:,im)=medianan([d.rv(:,i1).*w2-vr]',iav)'+rvav;
 % estimate mean STD of U and V
-   di.ruvs(:,im)=sqrt(rus.^2+stdnan([d.rv(:,i1).*w2]')'.^2);
+   di.ruvs(:,im)=sqrt(rus.^2+stdnan([d.rv(:,i1).*w2-vr]')'.^2);
 % W
    wr=medianan(d.rw(izr,i1).*w);
    rwav=meannan(wr);

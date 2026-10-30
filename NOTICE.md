@@ -7,6 +7,10 @@ Profiler) processing software:
   (http://www.ldeo.columbia.edu/ladcp)
 - Later maintenance: Gerd Krahmann (IFM-GEOMAR), Frederic Marin (IRD/LEGOS),
   Jacques Grelet (IRD)
+- Current maintainer: Andreas M. Thurnherr (LDEO/Columbia). The packaged code is upstream
+  release IX_15, commit `ecfda32` of `github.com/athurnherr/LDEO_IX` (2024-08-23), plus the
+  patches listed in `CHANGES.md`. Before 2026-10-30 this repository packaged an older snapshot
+  (IX_14beta, closest to IX_13); see `CHANGES.md`.
 
 **License status:** the upstream distribution does not include a LICENSE
 file or an explicit redistribution grant. Its `readme.txt` states only:
