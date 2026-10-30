@@ -47,14 +47,19 @@ differ slightly from the same casts processed today. The test suites pass (webap
 file-by-file comparison are in NDO-1116's comments. The Investigator IN2021_V04 test cast in `test_data` could not be
 used: its navigation files do not cover the cast time (the Seapath log ends 8 hours before it).
 
-Against the original MATLAB results: three RV Investigator IN2019_V05 casts (004, 016 and 027), processed in 2019 with
-IX_13 under MATLAB, were re-run with the same inputs and the same declination. Both the older snapshot and IX_15 reproduce
-the MATLAB profiles to about 0.3 to 1.1 cm/s RMS below 60 m (largest single difference about 4 cm/s); the top 57 m of
-cast 016 differs by up to 20 cm/s, probably because of a different `sadcp.mat`, which was not checked. The port is
-therefore close to, but not bit-for-bit identical with, MATLAB (for cast 027 the first outlier-rejection step already
-discards 2618 bins in Octave against 2585 in MATLAB), and the difference is about as large as the difference between
-IX_13 and IX_15. A fourth cast (001) could not be reproduced because its 2019 run used per-cast parameters that are not in
-`set_cast_params.m`. The IN2019_V05 data are not in this repository.
+Against the original MATLAB results: RV Investigator IN2019_V05 casts 004 and 027, processed in 2019 with IX_13 under
+MATLAB, were re-run with the same raw files, CTD files and declination. For both casts the cast start and end times, the
+number of ship's-ADCP profiles and the SADCP weights match the 2019 logs, and the older snapshot reproduces the MATLAB
+profiles to 0.3 to 0.75 cm/s RMS below 60 m (largest single difference about 3 cm/s); IX_15 gives 0.35 to 1.1 cm/s
+(largest about 4 cm/s). The port is therefore close to, but not bit-for-bit identical with, MATLAB, and the difference is
+about as large as the difference between IX_13 and IX_15. Two steps are very sensitive to small changes and are the likely
+sources: the "non-pinging ensemble" test compares quantised velocity differences with exactly 0.005 m/s, so rounding noise
+decides it (values of 0.0049999999999998934 and 0.0050000000000000044 both occur), and the outlier rejection works in
+blocks of about five minutes, where changing the block length by one ensemble changes the discarded bins by about 50 on
+cast 027 (2562 for 288 ensembles, 2618 for 289; MATLAB's log shows 2585). A third cast (016) cannot be used as a test: the
+CTD file and `sadcp.mat` on the drive were rewritten after the 2019 results were produced, and its cast end time and SADCP
+profile count differ for that reason. Cast 001 could not be reproduced because its 2019 run used per-cast parameters that are
+not in `set_cast_params.m`. The IN2019_V05 data are not in this repository.
 
 ## Superseded: patches against the earlier IX_14beta snapshot
 
