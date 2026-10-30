@@ -47,6 +47,15 @@ differ slightly from the same casts processed today. The test suites pass (webap
 file-by-file comparison are in NDO-1116's comments. The Investigator IN2021_V04 test cast in `test_data` could not be
 used: its navigation files do not cover the cast time (the Seapath log ends 8 hours before it).
 
+Against the original MATLAB results: three RV Investigator IN2019_V05 casts (004, 016 and 027), processed in 2019 with
+IX_13 under MATLAB, were re-run with the same inputs and the same declination. Both the older snapshot and IX_15 reproduce
+the MATLAB profiles to about 0.3 to 1.1 cm/s RMS below 60 m (largest single difference about 4 cm/s); the top 57 m of
+cast 016 differs by up to 20 cm/s, probably because of a different `sadcp.mat`, which was not checked. The port is
+therefore close to, but not bit-for-bit identical with, MATLAB (for cast 027 the first outlier-rejection step already
+discards 2618 bins in Octave against 2585 in MATLAB), and the difference is about as large as the difference between
+IX_13 and IX_15. A fourth cast (001) could not be reproduced because its 2019 run used per-cast parameters that are not in
+`set_cast_params.m`. The IN2019_V05 data are not in this repository.
+
 ## Superseded: patches against the earlier IX_14beta snapshot
 
 The numbered list below describes the earlier snapshot. Items 1, 2, 3 (as the `f.nav_time_base` workaround),
