@@ -421,3 +421,41 @@ as `p.zbottom`, shipboard ADCP contour where one covers the cast,
 default), `build_voyage_report.py`, `build_dmv_package.py`,
 `package_voyage.sh`. Packages for 202324050 (casts 4-6) and 202324060
 (casts 3-6) are delivered; see the Nuyina workspace handover for where.
+
+# Handover — 2026-10-30: rebase onto upstream IX_15 (NDO-1116)
+
+Branch `ndo-1116-rebase-ix15` (not merged, not pushed when this was written).
+
+## What changed
+- `ldeo_ix/` is now upstream IX_15 (`athurnherr/LDEO_IX` commit `ecfda32`), not the IX_14beta snapshot. The patches on top
+  are listed in `CHANGES.md` ("Current baseline"): five from upstream PRs 5 and 6, plus a `file_in_loadpath` lookup
+  in `magdev.m`.
+- New `stubs/rmmissing.m`; the Dockerfile installs the Octave Forge `io` package (needs network at build time).
+- `magdec/` is still in the image but unused: IX_15 uses its built-in IGRF13 code by default. Keep it until
+  LDEO_XI (which removes the external call) is released, then drop it.
+
+## Running a cast on the new image
+```bash
+docker build -t ldeo-ix-octave:ix15 .
+scripts/process_cast.sh <staging-dir> <cast-config.json> ldeo-ix-octave:ix15
+```
+The public script ignores `extra_params`, so a cast that needs `p.zbottom` or lag limits needs the private driver
+(`nuyina_data/scripts/process_cast_timoff.sh`, same arguments). Without the bottom depth, cast 005 came out with a
+bottom at 783 m in 646 m of water.
+
+## Things that bit
+- Containers run as root, so a failed run leaves root-owned files in the staging folder. Remove them with
+  `docker run --rm --entrypoint sh -v <dir>:/d ldeo-ix-octave:ix15 -c 'rm -rf /d/V7 /d/checkpoints'`.
+- `process_cast` needs `V7/` and `checkpoints/` to exist under the cast's `data/` when run without the webapp.
+- Octave's `xlsread` only looks in the current directory, hence the `magdev.m` change.
+
+## Validation
+Seven Nuyina casts (202324050 casts 004 to 006, 202324060 casts 003 to 006) on old versus IX_15: declination 0.013 to
+0.021 degrees lower on IX_15, profiles 0.4 to 1.1 cm/s RMS apart. On 202324050_005 the difference is fully accounted for by
+`loadctd.m`, `prepinv.m`, `getinv.m` and `loadnav.m`. Results and method are in the NDO-1116 comments.
+The Investigator IN2021_V04 test cast cannot be used: the navigation in `test_data` does not cover its time.
+
+## Open
+- Review, then merge and push.
+- Confluence Installation and Maintenance pages updated 2026-10-30; the Dev Log needs an entry if this is merged.
+- Reply to Andreas Thurnherr sent 2026-10-30 (NDO-642).

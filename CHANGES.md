@@ -35,10 +35,17 @@ Dropped because IX_15 already has the fix: the `f.IGRF` argument, the up-looker 
 Also gone with the older snapshot: `IGRF00.m`, `IGRF95.m`. Added by IX_15: `IGRF13coeffs.xlsx`, `geomag/`
 (C source, not used at run time), `HISTORY`, `Processing_HowTo.pdf`, `ldeo_to_cdf.py`, `calc_shear3.m`.
 
-Validation (NDO-1116): Nuyina voyage 202324050 casts 004, 005 and 006 were processed on the old snapshot
-(with the IGRF-14 `magdec`) and on IX_15. The declination differs by 0.013 to 0.014 degrees (IX_15 built-in
-15.8683 to 15.8716 against 15.8815 to 15.8848), the profiles differ by 0.5 to 0.8 cm/s RMS and up to 3.3 cm/s at
-single depths, and the test suite passes (webapp 109, magdec 6). See the Jira issue for the comparison table.
+Validation (NDO-1116): seven Nuyina casts (voyage 202324050 casts 004 to 006 and voyage 202324060 casts
+003 to 006) were processed on the old snapshot (with the IGRF-14 `magdec`) and on IX_15, with the same inputs and
+cast settings. The declination differs by 0.013 to 0.021 degrees (IX_15's built-in IGRF13 is lower). The profiles
+differ by 0.4 to 1.1 cm/s RMS, with single-depth differences up to 3.3 cm/s on the shallow casts and 8.1 cm/s on a
+3.7 km cast. On cast 202324050_005, putting the old versions of `loadctd.m`, `prepinv.m`, `getinv.m` and `loadnav.m`
+back into IX_15 reproduces the old result exactly; `loadctd.m` and `prepinv.m` alone come within 0.07 cm/s.
+`prepinv.m` carries the upstream fix of 4 Sep 2019 ("superens std was calculated without removing means"), and
+`loadctd.m` the changes of 28 Jan 2020, 29 Apr 2021 and 3 May 2023, so casts processed with versions before those dates
+differ slightly from the same casts processed today. The test suites pass (webapp 109, magdec 6). The tables and the
+file-by-file comparison are in NDO-1116's comments. The Investigator IN2021_V04 test cast in `test_data` could not be
+used: its navigation files do not cover the cast time (the Seapath log ends 8 hours before it).
 
 ## Superseded: patches against the earlier IX_14beta snapshot
 
