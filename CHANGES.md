@@ -98,10 +98,11 @@ of MATLAB. Every change is listed here; nothing else was touched.
    this file's own "complete, authoritative patch list" framing may not hold if other undated
    upstream fixes are missing. A genuine re-diff against current upstream needs a real current
    source; the only one found (`ldeo.columbia.edu`'s own hgweb Mercurial CGI, discovered via
-   web search) returned a 500 Internal Server Error on every path tried, and the
-   `athurnherr/LDEO_IX` GitHub mirror this repo's sibling `LDEO_IX` checkout tracks as
-   `upstream` is itself frozen at the same "cleaned up for gitHub release" commit this image
-   was already built from -- confirmed via `git fetch upstream` finding nothing new. This
+   web search) returned a 500 Internal Server Error on every path tried. **Corrected
+   2026-10-30:** the `athurnherr/LDEO_IX` GitHub repo (IX_15, commit `ecfda32`) is the current
+   source and is newer than this image's `ldeo_ix/`, which is not "the same commit" as an earlier
+   version of this note claimed; the re-diff has now been done, see "Baseline provenance and
+   comparison with upstream IX_15" below. This
    specific fix (`db.Up` check) was actionable from the review's own precise description
    without needing that source; a full re-diff is not, and would need either that server
    coming back or direct contact with Andreas Thurnherr (see "Upstream contact" below -- he's
@@ -128,6 +129,43 @@ folded into upstream — including a successor version he is developing,
 tentatively named LDEO_XI, not yet published. Nothing here depends on that
 future release; noted so a later session doesn't have to re-derive whether
 these were genuine bugs from scratch.
+
+On 2026-09-11 he added that LDEO_XI drops the external `magdec` call and goes back to
+the built-in MATLAB declination code, which he has used rather than `magdec` for years.
+Both bugs are pull request 6 on `athurnherr/LDEO_IX`, and the Octave changes (items 1, 2
+and 5) are pull request 5; both were still open on 2026-10-30.
+
+## Baseline provenance and comparison with upstream IX_15 (2026-10-30)
+
+`ldeo_ix/` is not the current upstream release. Its `default.m` reports `Version IX_14beta`
+and its header says `dlm: Fri Sep 14 18:19:40 2018`. Compared file by file with the tagged
+upstream versions, it is closest to IX_13 (17 Jan 2018): for example `magdev.m` is identical to
+IX_13's. It lacks the declination rewrite of 4 Sep 2019 and everything in IX_14 (June 2021) and
+IX_15 (25 June 2024, upstream `master` `ecfda32`, 23 Aug 2024). Eighteen files differ from
+IX_15: `add_struct`, `checkbtrk`, `default`, `edit_data`, `end_processing_step`, `getbtrack`,
+`getdpth`, `getdpthi`, `geterr`, `getinv`, `loadctd`, `loadnav`, `loadrdi`, `magdev`, `plotraw`,
+`prepinv`, `process_cast` and `savearch`. Where the snapshot was obtained is not recorded.
+
+How each item above stands against IX_15:
+
+| Item | In IX_15? |
+|---|---|
+| 1, 2 (`do` is an Octave keyword) | Still present. Octave portability only; not a MATLAB bug. |
+| 3 (`nav_time_base` set on `p`, read from `f`) | Still present (`loadnav.m` lines 82 and 147). |
+| 4 (`dru` tested twice, `drv` never) | Still present (`loadrdi.m` lines 479 and 501). |
+| 5 (checkpoint `save` without `.mat`) | Still present. Octave portability only. |
+| 6 (dead `f.IGRF` argument) | Fixed; the warning no longer references it. |
+| 7 (up-looker bottom track used, NDO-786) | Fixed upstream (`db.Up` check, warning and ignore). |
+| 8 (`geterr.m` `btmi` NaN) | Fixed upstream 27 Jan 2020 (sub-plots skipped when `btmi` is not finite); our third fallback is redundant. |
+| `magdev` year-2000 fallback | Fixed upstream: `magdev.m` is IGRF12-based and takes the cast year, and `loadnav.m` defaults to it (`magdec_source=2`). |
+
+So items 3 and 4 are bugs in the current release; items 6 to 8 and the year-2000 fallback
+affect only this older snapshot. The statement above that no live source for `magdec` exists is
+also not right for the GitHub release: IX_15 ships `geomag/` (C source `magdec.c`,
+`IGRF11.COF`, `WMM2010.COF`). The dead links were the old SOEST and LDEO servers.
+
+Rebasing this image onto IX_15 and re-running the validation casts is tracked as a Jira task
+(NDO-1116 in the AAD Jira project; see the issue for status).
 
 ## Missing/incompatible functions — fixed via `stubs/`
 
@@ -158,7 +196,10 @@ this headless image doesn't.
 real magnetic-declination calculator backed by `ppigrf` (IGRF-14), installed in
 the Docker image to provide the tool that `loadnav.m` expects. Without it, the
 pipeline silently fell back to a hardcoded year-2000 magnetic model (from the
-`magdev()` function) for every cast, resulting in inaccurate current profiles.
+`magdev()` function) for every cast, resulting in inaccurate current profiles. (This
+describes this image's older `ldeo_ix/` snapshot. Current upstream IX_15 uses a newer,
+IGRF12-based `magdev.m` that takes the cast year, and ships the `magdec` source under
+`geomag/`; see "Baseline provenance and comparison with upstream IX_15" below.)
 Verified live on 2026-09-06 by re-running real Nuyina LADCP cast 005 (station
 5, 2024-06-17): the real `geomag()` branch in unmodified `ldeo_ix/loadnav.m`
 picked up the new tool, reporting `corrected for magnetic declination of 15.9
